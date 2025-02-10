@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Counter System</title>
+ <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            padding: 10px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .scanner-section, .add-form {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        input, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 4px 0;
+            width: 100%;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin: 15px 0;
+            display: block;
+            overflow-x: auto;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            min-width: 120px;
+        }
+
+        th {
+            background: #f8f9fa;
+        }
+
+        .logs {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        #camera-preview {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        .export-section {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .form-row { flex-wrap: nowrap; }
+            input, button { width: auto; }
+            table { display: table; }
+            th, td { min-width: auto; }
+        }
+
+        @media (max-width: 480px) {
+            th, td { padding: 8px; font-size: 14px; }
+            button { padding: 8px; }
+            #camera-preview { max-height: 200px; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="scanner-section">
+            <h2>📷 Barcode Scanner</h2>
+            <video id="camera-preview"></video>
+            <button onclick="startScanner()">Start Scanner</button>
+            <button onclick="stopScanner()">Stop Scanner</button>
+        </div>
+
+        <div class="add-form">
+            <h2>➕ Add Product</h2>
+            <div class="form-row">
+                <input type="text" id="product-code" placeholder="Code*" required>
+                <input type="text" id="product-name" placeholder="Name (optional)">
+                <input type="date" id="expiry-date" placeholder="Expiry (optional)">
+                <input type="number" id="quantity" placeholder="Qty" value="1">
+                <button onclick="addProduct()">Add</button>
+            </div>
+        </div>
+
+        <input type="text" id="search" placeholder="🔍 Search products..." onkeyup="searchProducts()">
+
+        <table id="stock-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Code</th>
+                    <th>Expiry</th>
+                    <th>Qty</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="export-section">
+            <button onclick="exportJSON()">📤 Export JSON</button>
+            <button onclick="exportPDF()">📤 Export PDF</button>
+            <button onclick="importData()">📥 Import JSON</button>
+            <input type="file" id="import-file" hidden accept=".json">
+        </div>
+
+        <div class="logs">
+            <h3>📝 Activity Log</h3>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+
+    <script>
+        let stockItems = [];
+        let logEntries = [];
+        let scannerStream = null;
+        let isScanning = false;
+
+        // Scanner Functions
+        async function startScanner() {
+            try {
+                if (!('BarcodeDetector' in window)) {
+                    alert('Barcode scanning requires Chrome 83+ or Edge 84+');
+                    return;
+                }
+
+                const video = document.getElementById('camera-preview');
+                if (scannerStream) {
+                    video.srcObject = scannerStream;
+                    await video.play();
+                    return;
+                }
+
+                const constraints = {
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+
+                scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = scannerStream;
+                await video.play();
+                isScanning = true;
+
+                const barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'code_39'] });
+                
+                const scanLoop = async () => {
+                    if (!isScanning) return;
+                    try {
+                        const barcodes = await barcodeDetector.detect(video);
+                        if (barcodes.length > 0) {
+                            handleScannedBarcode(barcodes[0].rawValue);
+                        }
+                    } catch (error) {
+                        console.error('Scan error:', error);
+                    }
+                    requestAnimationFrame(scanLoop);
+                };
+                scanLoop();
+            } catch (error) {
+                alert(`Scanner error: ${error.message}`);
+            }
+        }
+
+        function stopScanner() {
+            isScanning = false;
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+                document.getElementById('camera-preview').srcObject = null;
+            }
+        }
+
+        function handleScannedBarcode(code) {
+            document.getElementById('product-code').value = code;
+            document.getElementById('product-name').focus();
+        }
+
+        // Product Management
+        function addProduct() {
+            const code = document.getElementById('product-code').value;
+            const name = document.getElementById('product-name').value;
+            const expiryDate = document.getElementById('expiry-date').value;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+
+            if (!code) {
+                alert('Product code is required');
+                return;
+            }
+
+            const existingIndex = stockItems.findIndex(item => 
+                item.code === code && item.expiryDate === expiryDate
+            );
+
+            const productName = name || 'Unnamed Product';
+            const productExpiry = expiryDate || 'N/A';
+
+            if (existingIndex > -1) {
+                stockItems[existingIndex].quantity += quantity;
+                addLog('Quantity Updated', `${productName} (+${quantity})`);
+            } else {
+                stockItems.push({
+                    code,
+                    name: productName,
+                    expiryDate: productExpiry,
+                    quantity,
+                    added: new Date().toISOString()
+                });
+                addLog('Product Added', `${productName} (${code})`);
+            }
+
+            ['product-code', 'product-name', 'expiry-date'].forEach(id => 
+                document.getElementById(id).value = ''
+            );
+            document.getElementById('quantity').value = '1';
+            
+            saveData();
+            updateTable();
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#stock-table tbody');
+            tbody.innerHTML = stockItems.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td contenteditable="true" onblur="updateField(${index}, 'name', this.textContent)">
+                        ${item.name}
+                    </td>
+                    <td>${item.code}</td>
+                    <td contenteditable="true" onblur="updateField(${index}, 'expiryDate', this.textContent)">
+                        ${item.expiryDate}
+                    </td>
+                    <td contenteditable="true" onblur="updateQuantity(${index}, this.textContent)">
+                        ${item.quantity}
+                    </td>
+                    <td>
+                        <button onclick="deleteItem(${index})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Data Management
+        function saveData() {
+            localStorage.setItem('stockData', JSON.stringify({
+                stockItems,
+                logEntries
+            }));
+        }
+
+        function loadData() {
+            const savedData = JSON.parse(localStorage.getItem('stockData')) || {};
+            stockItems = savedData.stockItems || [];
+            logEntries = savedData.logEntries || [];
+            updateTable();
+            updateLogs();
+        }
+
+        function exportJSON() {
+            const data = JSON.stringify({ stockItems, logEntries }, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stock-export-${Date.now()}.json`;
+            a.click();
+        }
+
+        function exportPDF() {
+            if (stockItems.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            const doc = new jspdf.jsPDF();
+            doc.text("Stock Inventory Report", 20, 20);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 28);
+
+            const headers = [['Code', 'Name', 'Expiry Date', 'Quantity']];
+            const data = stockItems.map(item => [
+                item.code,
+                item.name,
+                item.expiryDate,
+                item.quantity.toString()
+            ]);
+
+            doc.autoTable({
+                startY: 35,
+                head: headers,
+                body: data,
+                theme: 'grid',
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [41, 128, 185] }
+            });
+
+            doc.save(`stock-report-${Date.now()}.pdf`);
+        }
+
+        function importData() {
+            document.getElementById('import-file').click();
+        }
+
+        document.getElementById('import-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(reader.result);
+                    stockItems = data.stockItems || [];
+                    logEntries = data.logEntries || [];
+                    saveData();
+                    updateTable();
+                    updateLogs();
+                    alert('Data imported successfully!');
+                } catch (error) {
+                    alert('Invalid file format');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Logs System
+        function addLog(action, details) {
+            logEntries.unshift({
+                timestamp: new Date().toLocaleString(),
+                action,
+                details
+            });
+            updateLogs();
+            saveData();
+        }
+
+        function updateLogs() {
+            const logContainer = document.getElementById('log-entries');
+            logContainer.innerHTML = logEntries
+                .map(log => `
+                    <div class="log-entry">
+                        [${log.timestamp}] ${log.action}: ${log.details}
+                    </div>
+                `).join('');
+        }
+
+        // Utility Functions
+        function searchProducts() {
+            const term = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('#stock-table tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        }
+
+        function updateField(index, field, value) {
+            stockItems[index][field] = value;
+            addLog('Updated', `${field} for ${stockItems[index].name}`);
+            saveData();
+        }
+
+        function updateQuantity(index, newQty) {
+            const oldQty = stockItems[index].quantity;
+            stockItems[index].quantity = parseInt(newQty) || 0;
+            addLog('Qty Changed', `${stockItems[index].name}: ${oldQty} → ${newQty}`);
+            saveData();
+        }
+
+        function deleteItem(index) {
+            if (confirm('Delete this item?')) {
+                const deleted = stockItems.splice(index, 1)[0];
+                addLog('Deleted', deleted.name);
+                saveData();
+                updateTable();
+            }
+        }
+
+        // Initialization
+        window.addEventListener('load', loadData);
+        window.addEventListener('beforeunload', () => {
+            stopScanner();
+        });
+    </script>
+</body>
+</html>
