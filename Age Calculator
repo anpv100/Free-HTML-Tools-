@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Calculator</title>
+    <style>
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --background-color: #f8f9fa;
+        --text-color: #333;
+        --button-bg: #3498db;
+        --button-hover-bg: #2980b9;
+        --button-text: #fff;
+        --border-color: #e0e0e0;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 1rem;
+    }
+
+    .alert {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 2rem;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 2rem;
+        color: var(--secondary-color);
+        margin-bottom: 1.5rem;
+    }
+
+    span {
+        display: block;
+        font-size: 1.1rem;
+        color: var(--text-color);
+        margin-bottom: 1rem;
+    }
+
+    .ciF {
+        margin-bottom: 1.5rem;
+    }
+
+    .ciF input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        text-align: center;
+        transition: border-color 0.3s ease;
+    }
+
+    .ciF input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        margin-top: 1rem;
+    }
+
+    .button:hover {
+        background-color: var(--button-hover-bg);
+    }
+
+    .button:active {
+        transform: scale(0.98);
+    }
+
+    #result {
+        margin-top: 2rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--text-color);
+        text-align: left;
+        background: var(--background-color);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    #result strong {
+        color: var(--secondary-color);
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 1.75rem;
+        }
+
+        span {
+            font-size: 1rem;
+        }
+
+        .ciF input {
+            font-size: 0.9rem;
+        }
+
+        .button {
+            width: 100%;
+        }
+
+        #result {
+            font-size: 1rem;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="alert">
+        <h1>Age Calculator</h1>
+      <span>Your Date of Birth</span>
+        <div class="ciF">
+            
+            <input type="text" id="birthdate" placeholder="DD/MM/YYYY" required>
+        </div>
+       <center> <a class=" button" onclick="calculateAge()">Calculate Age</a></center>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function calculateAge() {
+    const birthdateInput = document.getElementById('birthdate').value;
+
+    // Split the input into day, month, and year
+    const [day, month, year] = birthdateInput.split('/').map(Number);
+
+    // Validate the input
+    if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > new Date().getFullYear()) {
+        alert("Please enter a valid date in DD/MM/YYYY format.");
+        return;
+    }
+
+    // Create a Date object (JavaScript uses MM/DD/YYYY format internally)
+    const birthdate = new Date(year, month - 1, day); // Month is 0-indexed in JavaScript
+    const today = new Date();
+
+    // Check if the birthdate is valid
+    if (isNaN(birthdate)) {
+        alert("Please enter a valid date of birth.");
+        return;
+    }
+
+    // Calculate age in years, months, and days
+    let ageYears = today.getFullYear() - birthdate.getFullYear();
+    let ageMonths = today.getMonth() - birthdate.getMonth();
+    let ageDays = today.getDate() - birthdate.getDate();
+
+    // Adjust if the current month/day is before birth month/day
+    if (ageMonths < 0 || (ageMonths === 0 && ageDays < 0)) {
+        ageYears--;
+        ageMonths += 12;
+    }
+
+    if (ageDays < 0) {
+        const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        ageDays = lastMonth.getDate() - birthdate.getDate() + today.getDate();
+        ageMonths--;
+    }
+
+    // Calculate total days, weeks, hours, minutes, and seconds
+    const timeDiff = today - birthdate; // Difference in milliseconds
+    const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const totalWeeks = Math.floor(totalDays / 7);
+    const remainingDays = totalDays % 7;
+    const totalHours = totalDays * 24;
+    const totalMinutes = totalHours * 60;
+    const totalSeconds = totalMinutes * 60;
+
+    // Display the result
+    const result = document.getElementById('result');
+    result.innerHTML = `
+        <strong>Age:</strong><br>
+        ${ageYears} years ${ageMonths} months ${ageDays} days<br>
+        or ${(ageYears * 12) + ageMonths} months ${ageDays} days<br>
+        or ${totalWeeks} weeks ${remainingDays} days<br>
+        or ${totalDays} days<br>
+        or ${totalHours} hours<br>
+        or ${totalMinutes} minutes<br>
+        or ${totalSeconds} seconds
+    `;
+}
+    </script>
+</body>
+</html>
