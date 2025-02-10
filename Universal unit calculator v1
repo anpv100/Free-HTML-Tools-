@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Universal Unit Converter</title>
+
+    
+
+<style>
+    /* General Styles */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .alert.outline {
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .ciF {
+        margin-bottom: 15px;
+    }
+
+    input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        background-color: #fff;
+        cursor: pointer;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        margin-top: 10px;
+    }
+
+    .button:hover {
+        background-color: #0056b3;
+    }
+
+    .button svg {
+        width: 20px;
+        height: 20px;
+        vertical-align: middle;
+    }
+
+    .result {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 18px;
+        color: #333;
+    }
+
+    /* Container Styles */
+    .container {
+        display: none;
+    }
+
+    .container.active {
+        display: block;
+    }
+
+    /* Swap Button Styles */
+    .button.swap {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        margin: 10px 0;
+    }
+
+    .button.swap svg {
+        fill: #007bff;
+    }
+
+    .button.swap:hover svg {
+        fill: #0056b3;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+        .alert.outline {
+            padding: 15px;
+        }
+
+        h1 {
+            font-size: 20px;
+        }
+
+        input[type="number"], select {
+            font-size: 14px;
+        }
+
+        .button {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+
+        .result {
+            font-size: 16px;
+        }
+    }
+</style>
+
+
+
+</head>
+
+<body>
+
+    <div class="alert outline">
+
+        <h1>Universal Unit Converter</h1>
+
+        
+
+        <div class="ciF">
+
+            <select id="category" onchange="updateUnits()">
+
+                <option value="length">Length</option>
+
+                <option value="weight">Weight</option>
+
+                <option value="temperature">Temperature</option>
+
+                <option value="area">Area</option>
+
+                <option value="volume">Volume</option>
+
+                <option value="speed">Speed</option>
+
+                <option value="pressure">Pressure</option>
+
+                <option value="time">Time</option>
+
+                <option value="digital">Digital Storage</option>
+
+            </select>
+
+        </div>
+
+        <div class="ciF">
+
+            <input type="number" id="inputValue" placeholder="Enter value" step="any">
+<br>
+            <select id="fromUnit"></select>
+
+           <center> <a class="button"  onclick="swapUnits()"><svg class='line' viewBox='0 0 24 24'><path d='M10.45 6.71997L6.72998 3L3.01001 6.71997'></path><path d='M6.72998 21V3'></path><path d='M13.55 17.28L17.2701 21L20.9901 17.28'></path><path d='M17.27 3V21'></path></svg></a></center>
+
+            <select id="toUnit"></select>
+
+        </div>
+
+        <a class="button"  onclick="convert()">Convert</a>
+
+        <div class="result" id="result"></div>
+
+    </div>
+
+    <script>
+
+        const units = {
+
+            length: {
+
+                meters: 1,
+
+                kilometers: 1000,
+
+                centimeters: 0.01,
+
+                millimeters: 0.001,
+
+                miles: 1609.34,
+
+                yards: 0.9144,
+
+                feet: 0.3048,
+
+                inches: 0.0254
+
+            },
+
+            weight: {
+
+                kilograms: 1,
+
+                grams: 0.001,
+
+                milligrams: 0.000001,
+
+                pounds: 0.453592,
+
+                ounces: 0.0283495,
+
+                tons: 1000
+
+            },
+
+            temperature: {
+
+                celsius: 'celsius',
+
+                fahrenheit: 'fahrenheit',
+
+                kelvin: 'kelvin'
+
+            },
+
+            area: {
+
+                'square meters': 1,
+
+                'square kilometers': 1000000,
+
+                'square miles': 2589988.11,
+
+                acres: 4046.86,
+
+                hectares: 10000,
+
+                'square feet': 0.092903,
+
+                'square yards': 0.836127
+
+            },
+
+            volume: {
+
+                liters: 1,
+
+                milliliters: 0.001,
+
+                'cubic meters': 1000,
+
+                'cubic feet': 28.3168,
+
+                'cubic inches': 0.0163871,
+
+                gallons: 3.78541,
+
+                pints: 0.473176
+
+            },
+
+            speed: {
+
+                'm/s': 1,
+
+                'km/h': 0.277778,
+
+                'mph': 0.44704,
+
+                knots: 0.514444,
+
+                'ft/s': 0.3048
+
+            },
+
+            pressure: {
+
+                pascals: 1,
+
+                kilopascals: 1000,
+
+                bar: 100000,
+
+                psi: 6894.76,
+
+                atm: 101325
+
+            },
+
+            time: {
+
+                seconds: 1,
+
+                minutes: 60,
+
+                hours: 3600,
+
+                days: 86400,
+
+                weeks: 604800,
+
+                years: 31536000
+
+            },
+
+            digital: {
+
+                bytes: 1,
+
+                kilobytes: 1024,
+
+                megabytes: 1048576,
+
+                gigabytes: 1073741824,
+
+                terabytes: 1099511627776
+
+            }
+
+        };
+
+        function updateUnits() {
+
+            const category = document.getElementById('category').value;
+
+            const fromUnit = document.getElementById('fromUnit');
+
+            const toUnit = document.getElementById('toUnit');
+
+            
+
+            fromUnit.innerHTML = '';
+
+            toUnit.innerHTML = '';
+
+            
+
+            Object.keys(units[category]).forEach(unit => {
+
+                const option1 = document.createElement('option');
+
+                const option2 = document.createElement('option');
+
+                option1.text = unit;
+
+                option2.text = unit;
+
+                fromUnit.add(option1);
+
+                toUnit.add(option2);
+
+            });
+
+        }
+
+        function swapUnits() {
+
+            const fromUnit = document.getElementById('fromUnit');
+
+            const toUnit = document.getElementById('toUnit');
+
+            const temp = fromUnit.value;
+
+            fromUnit.value = toUnit.value;
+
+            toUnit.value = temp;
+
+            convert();
+
+        }
+
+        function convert() {
+
+            const category = document.getElementById('category').value;
+
+            const fromUnit = document.getElementById('fromUnit').value;
+
+            const toUnit = document.getElementById('toUnit').value;
+
+            const inputValue = parseFloat(document.getElementById('inputValue').value);
+
+            let result;
+
+            if (category === 'temperature') {
+
+                result = convertTemperature(inputValue, fromUnit, toUnit);
+
+            } else {
+
+                const baseValue = inputValue * units[category][fromUnit];
+
+                result = baseValue / units[category][toUnit];
+
+            }
+
+            document.getElementById('result').textContent = 
+
+                `${inputValue} ${fromUnit} = ${result.toFixed(6)} ${toUnit}`;
+
+        }
+
+        function convertTemperature(value, fromUnit, toUnit) {
+
+            if (fromUnit === toUnit) return value;
+
+            
+
+            // Convert to Celsius first
+
+            let celsius;
+
+            switch(fromUnit) {
+
+                case 'celsius': celsius = value; break;
+
+                case 'fahrenheit': celsius = (value - 32) * 5/9; break;
+
+                case 'kelvin': celsius = value - 273.15; break;
+
+            }
+
+            
+
+            // Convert from Celsius to target unit
+
+            switch(toUnit) {
+
+                case 'celsius': return celsius;
+
+                case 'fahrenheit': return (celsius * 9/5) + 32;
+
+                case 'kelvin': return celsius + 273.15;
+
+            }
+
+        }
+
+        // Initialize units
+
+        updateUnits();
+
+    </script>
+
+</body>
+
+</html>
