@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surah Viewer</title>
+    <style>
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --background-color: #f8f9fa;
+        --text-color: #333;
+        --border-color: #e0e0e0;
+        --hover-color: #2980b9;
+        --button-bg: #3498db;
+        --button-hover-bg: #2980b9;
+        --button-text: #fff;
+        --translation-color: #555;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        padding: 1rem;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header span {
+        font-size: 1.2rem;
+        color: var(--translation-color);
+    }
+
+    .ciF {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .ciF input,
+    .ciF select {
+        padding: 0.75rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        width: 150px;
+        text-align: center;
+        transition: border-color 0.3s ease;
+    }
+
+    .ciF input:focus,
+    .ciF select:focus {
+        border-color: var(--secondary-color);
+        outline: none;
+    }
+
+    .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        text-decoration: none;
+    }
+
+    .button:hover {
+        background-color: var(--button-hover-bg);
+    }
+
+    .button:active {
+        transform: scale(0.98);
+    }
+
+    .button svg {
+        width: 20px;
+        height: 20px;
+        margin-right: 0.5rem;
+    }
+
+    .top-controls,
+    .controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .page-content {
+        padding: 1rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .verse {
+        text-align: right;
+        font-size: 1.5rem;
+        line-height: 2.5rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .verse-number {
+        color: var(--secondary-color);
+        font-weight: bold;
+        margin-left: 1rem;
+    }
+
+    .translation-content {
+        font-style: italic;
+        color: var(--translation-color);
+        margin-top: 1rem;
+        padding: 1rem;
+        background: var(--background-color);
+        border-radius: 8px;
+    }
+
+    .copy-icon {
+        cursor: pointer;
+        margin-left: 1rem;
+        transition: opacity 0.3s ease;
+    }
+
+    .copy-icon:hover {
+        opacity: 0.8;
+    }
+
+    .copy-icon svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--secondary-color);
+    }
+
+    @media (max-width: 768px) {
+        .ciF {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ciF input,
+        .ciF select {
+            width: 100%;
+        }
+
+        .verse {
+            font-size: 1.2rem;
+            line-height: 2rem;
+        }
+
+        .top-controls,
+        .controls {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .button {
+            width: 100%;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .page-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    }
+</style>
+
+</head>
+<body>
+
+    <!-- Input Fields and Jump Button in One Line -->
+    <div class="ciF">
+        <input type="number" id="surah-select" placeholder="Surah Number" />
+        <input type="number" id="ayah-select" placeholder="Ayah Number" />
+        <a class="button" id="go-btn">Go</a>
+    </div>
+
+    <!-- New Select Fields for Surah (removed Juz) -->
+    <div class="ciF">
+        <select id="sura-select">
+            <option value="">Select Surah</option>
+        </select>
+    </div>
+
+    <!-- Top Controls -->
+    <div class="top-controls">
+        <a class="button" id="prev-btn">Back</a>
+
+        <a class="button" id="translate-toggle">Translate</a>
+
+        <a class="button" id="next-btn">Next</a>
+    </div>
+
+    <div>
+        <div class="page-header">
+            <h1 id="surah-name">Loading...</h1>
+            <span id="surah-english-name"></span>
+        </div>
+
+        <div class="page-content">
+            <div class="verses" id="surah-verses">
+                <!-- Ayahs will be loaded dynamically here -->
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="controls">
+            <a class="button" id="prev-btn-bottom">Back</a>
+            <a class="button" id="next-btn-bottom">Next</a>
+        </div>
+    </div>
+
+    <script>
+        let surahId = 1; // Default Surah ID
+        let currentAyah = null; // Start with no specific Ayah selected
+        let showTranslation = false; // Flag to control translation visibility
+
+        // Fetch Surah Data
+        async function fetchSurahData(surahId) {
+            try {
+                const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}`);
+                const data = await response.json();
+                return data.data;
+            } catch (error) {
+                console.error('Error fetching Surah data:', error);
+                return null;
+            }
+        }
+
+        // Fetch Translation for an Ayah
+        async function fetchAyahTranslation(surahId, ayahNumber) {
+            try {
+                const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/en.asad`);
+                const data = await response.json();
+                return data.data.text; // Return translated text
+            } catch (error) {
+                console.error('Error fetching translation:', error);
+                return '';
+            }
+        }
+
+        // Function to convert number to Arabic (for display purposes)
+        function toArabic(num) {
+            const arabicNumbers = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+            return num.toString().split('').map(digit => arabicNumbers[digit]).join('');
+        }
+
+        // Render Surah Data
+        async function renderSurah() {
+            const surah = await fetchSurahData(surahId);
+            if (!surah) {
+                alert("Failed to fetch Surah data.");
+                return;
+            }
+            const surahName = surah.name; // Arabic name
+            const surahEnglishName = surah.englishName; // English name
+            const ayahs = surah.ayahs;
+
+            document.getElementById("surah-name").textContent = `${surahName} - ${toArabic(surahId)}`;
+            document.getElementById("surah-english-name").textContent = surahEnglishName;
+
+            const versesContainer = document.getElementById("surah-verses");
+            versesContainer.innerHTML = '';
+
+            // Filter for specific Ayah if `currentAyah` is set
+            const ayahsToRender = currentAyah ? ayahs.filter(ayah => ayah.numberInSurah === parseInt(currentAyah)) : ayahs;
+            for (const ayah of ayahsToRender) {
+                const verseElement = document.createElement('div');
+                verseElement.classList.add('verse');
+
+                let translation = '';
+                if (showTranslation) {
+                    translation = await fetchAyahTranslation(surahId, ayah.numberInSurah);
+                }
+
+                verseElement.innerHTML = `
+    <div class="alert" style="display: flex; justify-content: space-between; align-items: center;">
+        <!-- Ayah Text and Verse Number -->
+        <span>
+            ${ayah.text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="verse-number">۝${toArabic(ayah.numberInSurah)}</span>
+        </span>
+        
+        <!-- SVG Icon for copy functionality (Right Aligned) -->
+        <span class="copy-icon" onclick="copyToClipboard('${surahName}', ${surahId}, ${ayah.numberInSurah}, '${showTranslation ? translation : ""}')">
+            <svg class='line' viewBox='0 0 24 24'>
+                <path d='M16 12.9V17.1C16 20.6 14.6 22 11.1 22H6.9C3.4 22 2 20.6 2 17.1V12.9C2 9.4 3.4 8 6.9 8H11.1C14.6 8 16 9.4 16 12.9Z'></path>
+                <path d='M22 6.9V11.1C22 14.6 20.6 16 17.1 16H16V12.9C16 9.4 14.6 8 11.1 8H8V6.9C8 3.4 9.4 2 12.9 2H17.1C20.6 2 22 3.4 22 6.9Z'></path>
+            </svg>
+        </span>
+    </div>
+    ${showTranslation ? `<div class="alert outline translation-content">${translation}</div>` : ''}
+`;
+                versesContainer.appendChild(verseElement);
+            }
+        }
+
+        // Populate Surah Select dropdown
+        async function populateSuraSelect() {
+            for (let i = 1; i <= 114; i++) {
+                const surah = await fetchSurahData(i);
+                if (surah) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `${surah.name} (${i})`;
+                    document.getElementById("sura-select").appendChild(option);
+                }
+            }
+        }
+
+        // Event listeners and handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSurah();
+            populateSuraSelect();
+
+            document.getElementById('translate-toggle').addEventListener('click', () => {
+                showTranslation = !showTranslation; // Toggle translation visibility
+                renderSurah(); // Re-render Surah after toggling
+            });
+
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                surahId = Math.max(surahId - 1, 1); // Decrease Surah ID, but not less than 1
+                currentAyah = null; // Reset Ayah selection
+                renderSurah();
+            });
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+                surahId++;
+                currentAyah = null; // Reset Ayah selection
+                renderSurah();
+            });
+
+            document.getElementById('prev-btn-bottom').addEventListener('click', () => {
+                surahId = Math.max(surahId - 1, 1); // Decrease Surah ID, but not less than 1
+                currentAyah = null; // Reset Ayah selection
+                renderSurah();
+            });
+
+            document.getElementById('next-btn-bottom').addEventListener('click', () => {
+                surahId++;
+                currentAyah = null; // Reset Ayah selection
+                renderSurah();
+            });
+
+            document.getElementById('go-btn').addEventListener('click', () => {
+                // Get Surah and Ayah numbers from the inputs
+                const surahNumber = parseInt(document.getElementById('surah-select').value.trim());
+                const ayahNumber = parseInt(document.getElementById('ayah-select').value.trim());
+
+                if (isNaN(surahNumber) || isNaN(ayahNumber)) {
+                    alert("Please enter valid Surah and Ayah numbers.");
+                    return;
+                }
+
+                surahId = surahNumber; // Set Surah ID from input
+                currentAyah = ayahNumber; // Set Ayah number from input
+                renderSurah(); // Render the Surah and Ayah
+            });
+
+            document.getElementById('sura-select').addEventListener('change', () => {
+                surahId = parseInt(document.getElementById('sura-select').value);
+                renderSurah();
+            });
+        });
+      
+      
+      
+      // Function to copy the Ayah text, Surah name, Surah number, Ayah number, and translation to clipboard
+
+function copyToClipboard(surahName, surahId, ayahNumber, translation) {
+
+    // Create the string that will be copied
+
+    const textToCopy = `${surahName} (${surahId}) - Ayah ${ayahNumber}\n${translation ? translation : "No translation available"}`;
+
+    
+
+    // Create a temporary input field to copy the text
+
+    const tempInput = document.createElement('input');
+
+    tempInput.value = textToCopy;
+
+    document.body.appendChild(tempInput);
+
+    
+
+    // Select the text and execute the copy command
+
+    tempInput.select();
+
+    tempInput.setSelectionRange(0, 99999); // For mobile devices
+
+    document.execCommand('copy');
+
+    
+
+    // Remove the temporary input field
+
+    document.body.removeChild(tempInput);
+
+    
+
+    // Optionally, show an alert or message indicating the text was copied
+
+    alert("Ayah copied to clipboard!");
+
+}
+    </script>
+</body>
+</html>
