@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAV File Analyzer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f0f2f5;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+
+        .upload-section {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            min-width: 140px;
+        }
+
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s ease;
+        }
+
+        .results-section {
+            margin-top: 1.5rem;
+            display: none;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #666;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+
+        #fileStatus {
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .upload-section {
+                padding: 1rem;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 0.8rem;
+            }
+
+            .upload-controls {
+                flex-direction: column;
+            }
+
+            pre {
+                font-size: 0.8rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WAV File Analyzer</h1>
+        
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept="audio/wav, .wav" hidden>
+            <div class="upload-controls">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    Select WAV File
+                </button>
+                <button class="btn btn-secondary" id="uploadBtn" disabled>
+                    Analyze File
+                </button>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="fileStatus">No file selected</p>
+            <p>Supported format: .wav | Max size: 50MB</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <button class="btn copy-btn" onclick="copyResults()">Copy JSON</button>
+            <pre id="jsonOutput"></pre>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null;
+        let audioContext;
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate WAV file
+                if (!file.type.includes('wav') && !file.name.toLowerCase().endsWith('.wav')) {
+                    alert('Please select a valid WAV file');
+                    this.value = '';
+                    return;
+                }
+                
+                if (file.size > 50 * 1024 * 1024) {
+                    alert('File too large! Max 50MB');
+                    return;
+                }
+                
+                currentFile = file;
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('fileStatus').textContent = file.name;
+            }
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            const progressBar = document.querySelector('.progress-bar');
+            const resultsSection = document.getElementById('resultsSection');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            try {
+                uploadBtn.disabled = true;
+                progressBar.style.width = '0%';
+                resultsSection.style.display = 'none';
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const arrayBuffer = await currentFile.arrayBuffer();
+                
+                // Simulate processing progress
+                const updateProgress = (progress) => {
+                    progressBar.style.width = `${progress}%`;
+                };
+
+                // Process in chunks for better progress reporting
+                const audioBuffer = await processAudio(arrayBuffer, updateProgress);
+                
+                displayResults({
+                    fileName: currentFile.name,
+                    channels: audioBuffer.numberOfChannels,
+                    sampleRate: audioBuffer.sampleRate,
+                    duration: audioBuffer.duration,
+                    fileSize: currentFile.size
+                });
+                
+                resultsSection.style.display = 'block';
+            } catch (error) {
+                alert('Error processing file: ' + error.message);
+                console.error(error);
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+
+        async function processAudio(arrayBuffer, progressCallback) {
+            return new Promise((resolve, reject) => {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Decode audio data with progress simulation
+                const totalLength = arrayBuffer.byteLength;
+                let loaded = 0;
+                
+                const interval = setInterval(() => {
+                    loaded = Math.min(loaded + (totalLength / 10), totalLength);
+                    const progress = (loaded / totalLength) * 100;
+                    progressCallback(progress);
+                    
+                    if (loaded >= totalLength) {
+                        clearInterval(interval);
+                    }
+                }, 200);
+
+                audioContext.decodeAudioData(arrayBuffer.slice(0), 
+                    (buffer) => {
+                        clearInterval(interval);
+                        progressCallback(100);
+                        resolve(buffer);
+                    },
+                    (error) => {
+                        clearInterval(interval);
+                        reject(error);
+                    }
+                );
+            });
+        }
+
+        function displayResults(analysis) {
+            const resultJson = {
+                "0 AudioClip Base": {
+                    "1 string m_Name": analysis.fileName.replace(/\.[^/.]+$/, ""),
+                    "0 int m_LoadType": 0,
+                    "0 int m_Channels": analysis.channels,
+                    "0 int m_Frequency": analysis.sampleRate,
+                    "0 int m_BitsPerSample": 16,
+                    "0 float m_Length": parseFloat(analysis.duration.toFixed(6)),
+                    "0 bool m_IsTrackerFormat": false,
+                    "1 bool m_Ambisonic": false,
+                    "0 int m_SubsoundIndex": 0,
+                    "0 bool m_PreloadAudioData": true,
+                    "0 bool m_LoadInBackground": false,
+                    "1 bool m_Legacy3D": true,
+                    "0 StreamedResource m_Resource": {
+                        "1 string m_Source": `${analysis.fileName.replace(/\.[^/.]+$/, "")}.resource`,
+                        "0 FileSize m_Offset": "0",
+                        "0 UInt64 m_Size": analysis.fileSize.toString()
+                    },
+                    "1 int m_CompressionFormat": 1
+                }
+            };
+
+            const jsonString = JSON.stringify(resultJson, null, 4)
+                .replace(/"(\d+)\s([^"]+)":/g, '"$1 $2":');
+
+            document.getElementById('jsonOutput').textContent = jsonString;
+        }
+
+        function copyResults() {
+            const jsonText = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                alert('JSON copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
