@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expiry Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --danger-color: #ff4757;
+            --warning-color: #2ed573;
+            --background: #f5f6fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .action-bar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+            background: linear-gradient(135deg, var(--primary-color), #357abd);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #ff6b81);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            position: relative;
+        }
+
+        th.sortable::after {
+            content: '↕';
+            position: absolute;
+            right: 10px;
+            opacity: 0.6;
+        }
+
+        .expired {
+            background-color: #ffe6e6;
+            color: var(--danger-color);
+        }
+
+        .soon {
+            background-color: #e6f3ff;
+            color: var(--primary-color);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .action-bar {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                justify-content: center;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="action-bar">
+            <input type="text" class="search-box" placeholder="Search products..." id="searchInput">
+            <div class="button-group">
+                <input type="file" id="fileInput" accept=".json,.xlsx,.xls" hidden>
+                <label for="fileInput" class="btn">Import</label>
+                <button class="btn" onclick="exportJSON()">Export JSON</button>
+                <button class="btn" onclick="exportExcel()">Export Excel</button>
+                <button class="btn" onclick="exportPDF()">Export PDF</button>
+                <button class="btn btn-danger" onclick="exportExpiring()">Export Expiring</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="sortTable('number')">No.</th>
+                        <th class="sortable" onclick="sortTable('code')">Code</th>
+                        <th class="sortable" onclick="sortTable('name')">Name</th>
+                        <th>Expiry Date</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let tableData = [];
+        let currentSort = { column: null, direction: 1 };
+
+        // File input and search handlers
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+
+        async function handleFile(e) {
+            const file = e.target.files[0];
+            if (file.name.endsWith('.json')) {
+                const data = JSON.parse(await file.text());
+                processData(data.stockItems);
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    processData(XLSX.utils.sheet_to_json(sheet));
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processData(items) {
+            tableData = items.map((item, index) => ({
+                ...item,
+                number: index + 1,
+                daysLeft: dateDifference(item.expiryDate),
+                status: getStatus(item.expiryDate)
+            })).sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+            
+            renderTable(tableData);
+        }
+
+        function dateDifference(expiryDate) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const expiry = new Date(expiryDate);
+            return Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function getStatus(expiryDate) {
+            const daysLeft = dateDifference(expiryDate);
+            if (daysLeft < 0) return 'Expired';
+            if (daysLeft <= 60) return 'Soon';
+            return '';
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(item => `
+                <tr class="${item.daysLeft < 0 ? 'expired' : item.daysLeft <= 60 ? 'soon' : ''}">
+                    <td>${item.number}</td>
+                    <td>${item.code}</td>
+                    <td>${item.name}</td>
+                    <td>${item.expiryDate}</td>
+                    <td>${item.quantity}</td>
+                    <td>
+                        <span class="status-indicator ${item.status.toLowerCase()}"></span>
+                        ${item.status || `${item.daysLeft} days`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Sorting functionality
+        function sortTable(column) {
+            const direction = currentSort.column === column ? -currentSort.direction : 1;
+            currentSort = { column, direction };
+            
+            tableData.sort((a, b) => {
+                if (a[column] > b[column]) return direction;
+                if (a[column] < b[column]) return -direction;
+                return 0;
+            });
+            
+            renderTable(tableData);
+        }
+
+        // Search functionality
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = tableData.filter(item => 
+                item.code.toLowerCase().includes(searchTerm) ||
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.status.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filtered);
+        }
+
+        // Export functions
+        function exportExpiring() {
+            const expiringData = tableData.filter(item => item.daysLeft <= 60 || item.daysLeft < 0);
+            exportData(expiringData, 'expiring-items');
+        }
+
+        function exportJSON() { exportData(tableData, 'full-export', 'json'); }
+        function exportExcel() { exportData(tableData, 'full-export', 'xlsx'); }
+        function exportPDF() { exportData(tableData, 'full-export', 'pdf'); }
+
+        function exportData(data, filename, type) {
+            if (type === 'pdf') {
+                const docDefinition = createPdfDefinition(data);
+                pdfMake.createPdf(docDefinition).download(`${filename}.pdf`);
+            } else if (type === 'xlsx') {
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                XLSX.writeFile(wb, `${filename}.xlsx`);
+            } else {
+                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                saveAs(blob, `${filename}.json`);
+            }
+        }
+
+        function createPdfDefinition(data) {
+            return {
+                pageSize: 'A4',
+                pageMargins: [40, 60, 40, 60],
+                header: { text: 'Expiry Report', style: 'header' },
+                content: [{
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', '*', '*', '*', '*', '*'],
+                        body: [
+                            ['No.', 'Code', 'Name', 'Expiry Date', 'Quantity', 'Status'],
+                            ...data.map(item => [
+                                item.number,
+                                item.code,
+                                item.name,
+                                item.expiryDate,
+                                item.quantity,
+                                item.status || `${item.daysLeft} days`
+                            ])
+                        ]
+                    }
+                }],
+                footer: { text: 'www.naufal.in', link: 'http://www.naufal.in', alignment: 'center' },
+                styles: {
+                    header: { fontSize: 24, bold: true, alignment: 'center', color: '#2c3e50' },
+                    tableHeader: { fillColor: '#4a90e2', color: 'white', bold: true }
+                }
+            };
+        }
+
+        function saveAs(blob, filename) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+    </script>
+</body>
+</html>
