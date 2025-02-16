@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Responsive Beautiful Clock</title>
+   <style>
+     * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Light Mode Colors */
+    --Light-1: #F5F5F5;  /* Very light gray for background */
+    --Light-2: #E0E0E0;  /* Light gray for subtle contrast */
+    --Light-3: #BDBDBD;  /* Medium gray for balanced tone */
+    --Light-4: #757575;  /* Darker gray for borders or highlights */
+
+    /* High Contrast Dark Mode Colors */
+    --Dark-1: #121212;  /* Very dark background */
+    --Dark-2: #1E1E1E;  /* Slightly lighter dark background */
+    --Dark-3: #2A2A2A;  /* Dark gray */
+    --Dark-4: #383838;  /* Medium dark gray */
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--Dark-1), var(--Dark-2), var(--Dark-3));
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+}
+
+body.light-mode {
+    background: linear-gradient(135deg, var(--Light-1), var(--Light-2), var(--Light-3));
+    color: #333;
+}
+
+.container {
+    width: 95%;
+    max-width: 400px;
+    min-width: 280px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.digital-clock {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    transition: color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+body.light-mode .digital-clock {
+    color: Black;  /* Coral color for digital clock */
+    background: rgba(255, 255, 255, 0.8);
+    
+}
+
+.clock-face {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 20%, rgba(0, 0, 0, 0.5) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.6),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+    margin: 0 auto;
+    backdrop-filter: blur(8px);
+    animation: subtleGlow 4s ease-in-out infinite alternate, waveAnimation 6s linear infinite;
+    transition: background 0.3s, border 0.3s, box-shadow 0.3s;
+}
+
+body.light-mode .clock-face {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 20%, rgba(230, 230, 230, 0.9) 100%);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes subtleGlow {
+    0% {
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        box-shadow: 0 0 70px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(255, 255, 255, 0.3);
+    }
+}
+
+@keyframes waveAnimation {
+    0% {
+        transform: scale(1) translateY(0);
+    }
+    50% {
+        transform: scale(1.05) translateY(-5px);
+    }
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+.marker {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: runningLight 1s ease-in-out infinite;
+}
+
+body.light-mode .marker {
+    background: black;
+}
+
+/* Animation for markers */
+@keyframes runningLight {
+    0% { 
+        opacity: 0.3; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+    50% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1.5); 
+    }
+    100% { 
+        opacity: 0.3; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+}
+.number {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transform: rotate(var(--rot));
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.95);
+    padding: 8%;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+body.light-mode .number {
+    color: #333;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.number span {
+    display: inline-block;
+    transform: rotate(calc(-1 * var(--rot)));
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+.settings-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: transform 0.3s;
+}
+
+.settings-btn:hover {
+    transform: rotate(90deg);
+}
+
+.settings-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    color: white;
+    width: 90%;
+    max-width: 300px;
+    display: none;
+    z-index: 1000;
+}
+
+.settings-popup.active {
+    display: block;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.setting-option {
+    margin: 15px 0;
+}
+
+.setting-option label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.setting-option select, .setting-option input[type="color"] {
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.hand {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom;
+    transform: translateX(-50%);
+    border-radius: 4px;
+    z-index: 2;
+    transition: transform 0.5s cubic-bezier(0.4, 2.3, 0.3, 1), background 0.3s, box-shadow 0.3s;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .hand {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.hour-hand {
+    width: 8px;
+    height: 25%;
+    background: linear-gradient(to top, #ff9d00, #ff003c);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 0 12px rgba(255, 100, 0, 0.7);
+}
+
+body.light-mode .hour-hand {
+    background: linear-gradient(to top, #FF6F61, #FF3B2F);
+}
+
+.minute-hand {
+    width: 5px;
+    height: 35%;
+    background: linear-gradient(to top, #003cff, #00eaff);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 0 12px rgba(0, 150, 255, 0.7);
+}
+
+body.light-mode .minute-hand {
+    background: linear-gradient(to top, #00C9A7, #00A8CC);
+}
+
+.second-hand {
+    width: 2px;
+    height: 40%;
+    background: linear-gradient(to top, #00ff44, #ffdd00);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+}
+
+body.light-mode .second-hand {
+    background: linear-gradient(to top, #FFD700, #FFA500);
+}
+
+.center-dot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+}
+
+body.light-mode .center-dot {
+    background: #FF6F61;
+    box-shadow: 0 0 20px rgba(255, 111, 97, 0.4);
+}
+
+.date {
+    text-align: center;
+    margin-top: 2.5rem;
+    font-size: 1.3rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 20px;
+    border-radius: 30px;
+    backdrop-filter: blur(5px);
+    animation: float 4s ease-in-out infinite;
+    transition: color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+body.light-mode .date {
+    color: #333;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
+
+
+.brand-name {
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: bold;
+}
+
+body.light-mode .brand-name {
+  color: black;
+  font-weight: bold;
+    
+    
+}
+
+   </style>
+</head>
+<body>
+    <button class="settings-btn">⚙️</button>
+    
+    <div class="container">
+        <div class="digital-clock" id="digital">00:00:00</div>
+        
+        <div class="clock-face">
+            <div class="markers" id="markers"></div>
+            
+            <div class="number" style="--rot: -60deg"><span>10</span></div>
+            <div class="number" style="--rot: -30deg"><span>11</span></div>
+            <div class="number" style="--rot: 0deg"><span>12</span></div>
+            <div class="number" style="--rot: 30deg"><span>1</span></div>
+            <div class="number" style="--rot: 60deg"><span>2</span></div>
+            <div class="number" style="--rot: 90deg"><span>3</span></div>
+            <div class="number" style="--rot: 120deg"><span>4</span></div>
+            <div class="number" style="--rot: 150deg"><span>5</span></div>
+            <div class="number" style="--rot: 180deg"><span>6</span></div>
+            <div class="number" style="--rot: 210deg"><span>7</span></div>
+            <div class="number" style="--rot: 240deg"><span>8</span></div>
+            <div class="number" style="--rot: 270deg"><span>9</span></div>
+            
+            <div class="hand hour-hand" id="hour"></div>
+            <div class="hand minute-hand" id="minute"></div>
+            <div class="hand second-hand" id="second"></div>
+            
+            <div class="center-dot"></div>
+            <div class="brand-name">Naufal.in</div>
+        </div>
+        
+        <div class="date" id="date">Monday, January 1, 2024</div>
+    </div>
+
+    <div class="settings-popup">
+        <div class="popup-header">
+            <h3>Settings</h3>
+            <button class="close-btn">×</button>
+        </div>
+        <div class="popup-content">
+            <div class="setting-option">
+                <label>Time Format:</label>
+                <select id="timeFormat">
+                    <option value="12">12-hour</option>
+                    <option value="24">24-hour</option>
+                </select>
+            </div>
+            <div class="setting-option" id="ampmOption">
+                <label>AM/PM:</label>
+                <select id="ampm">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+            <div class="setting-option">
+                <label>Dark Mode:</label>
+                <label class="switch">
+                    <input type="checkbox" id="darkMode">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-option">
+                <label>Clock Color:</label>
+                <input type="color" id="clockColor" value="#ff4444">
+            </div>
+        </div>
+    </div>
+
+    <script>
+       
+// Settings variables
+let is12Hour = true;
+let isDarkMode = true;
+let selectedColor = '#ff4444';
+let selectedAMPM = 'AM';
+
+// DOM Elements
+const settingsBtn = document.querySelector('.settings-btn');
+const settingsPopup = document.querySelector('.settings-popup');
+const closeBtn = document.querySelector('.close-btn');
+const timeFormatSelect = document.getElementById('timeFormat');
+const ampmSelect = document.getElementById('ampm');
+const darkModeToggle = document.getElementById('darkMode');
+const clockColorPicker = document.getElementById('clockColor');
+const digitalClock = document.getElementById('digital');
+const brandName = document.querySelector('.brand-name');  // Brand name element
+const dateElement = document.getElementById('date');  // Date element
+const markers = document.querySelectorAll('.marker');  // All .marker elements
+const numberElements = document.querySelectorAll('.number');  // All elements with class .number
+
+// Event Listeners
+settingsBtn.addEventListener('click', () => {
+    settingsPopup.classList.add('active');
+});
+
+closeBtn.addEventListener('click', () => {
+    settingsPopup.classList.remove('active');
+});
+
+timeFormatSelect.addEventListener('change', (e) => {
+    is12Hour = e.target.value === '12';
+    document.getElementById('ampmOption').style.display = is12Hour ? 'block' : 'none';
+});
+
+ampmSelect.addEventListener('change', (e) => {
+    selectedAMPM = e.target.value;
+});
+
+darkModeToggle.addEventListener('change', (e) => {
+    isDarkMode = e.target.checked;
+    document.body.classList.toggle('light-mode', !isDarkMode);
+});
+
+clockColorPicker.addEventListener('input', (e) => {
+    selectedColor = e.target.value;
+
+    // Log the selected color for debugging
+    console.log("Selected color:", selectedColor);
+
+    // Apply the selected color to the digital clock, brand name, date, markers, and all number elements
+    digitalClock.style.color = selectedColor;
+    brandName.style.color = selectedColor;
+    dateElement.style.color = selectedColor;
+
+    // Apply color to all marker elements
+    markers.forEach((marker) => {
+        console.log("Changing background color for marker:", marker); // Debugging each marker
+        marker.style.background = selectedColor;
+    });
+
+    // Apply color to all .number elements
+    numberElements.forEach((number) => {
+        console.log("Changing color for number:", number); // Debugging each number
+        number.style.color = selectedColor;
+    });
+});
+        // Time Update Function
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes().toString().padStart(2, '0');
+            let seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            if (is12Hour) {
+                hours = hours % 12 || 12;
+                if (selectedAMPM === 'PM' && now.getHours() < 12) {
+                    hours = (hours % 12) + 12;
+                }
+                const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                digitalClock.textContent = `${hours}:${minutes}:${seconds} ${ampm}`;
+            } else {
+                hours = hours.toString().padStart(2, '0');
+                digitalClock.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date').textContent = now.toLocaleDateString(undefined, options);
+
+            // Update analog clock hands
+            const secondDeg = now.getSeconds() * 6;
+            const minuteDeg = now.getMinutes() * 6 + now.getSeconds() * 0.1;
+            const hourDeg = (now.getHours() % 12) * 30 + now.getMinutes() * 0.5;
+
+            document.getElementById('second').style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+            document.getElementById('minute').style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+            document.getElementById('hour').style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Initialize markers
+        const markersContainer = document.getElementById('markers');
+        const radius = 140;
+        for (let i = 0; i < 60; i++) {
+            const marker = document.createElement('div');
+            marker.className = 'marker';
+            const angle = i * 6;
+            const x = radius * Math.cos(angle * (Math.PI / 180));
+            const y = radius * Math.sin(angle * (Math.PI / 180));
+            marker.style.left = `calc(50% + ${x}px)`;
+            marker.style.top = `calc(50% + ${y}px)`;
+            marker.style.animationDelay = `${i * 0.05}s`;
+            markersContainer.appendChild(marker);
+        }
+    </script>
+</body>
+</html>
