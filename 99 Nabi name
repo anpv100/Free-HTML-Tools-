@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 Names Name s.a Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.3s ease;
+            
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+      .name {
+    font-size: 2.5rem;
+    color: #ffffff;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    
+}
+
+        .translation {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+            font-weight: 300;
+            
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #7c4dff, #18a9ff);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 480px) {
+            .name {
+                font-size: 2rem;
+            }
+            
+            .translation {
+                font-size: 1rem;
+            }
+        }
+
+        /* Animation for text change */
+@keyframes fadeZoomIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.8) translateY(15px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1) translateY(0); 
+    }
+}
+
+.animate {
+    animation: fadeZoomIn 0.5s ease-out;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+      <h1> <div class="name animate" id="name">Ar-Rahman</div></h1>
+        <div class="translation animate" id="translation">The All-Compassionate</div>
+        <div class="buttons">
+            <button onclick="previousName()">
+                <i class="fas fa-arrow-left"></i>
+                Previous
+            </button>
+            <button onclick="nextName()">
+                Next
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+
+
+
+<script>
+    const nabiNames = [
+    { number: 1, name: "محمد", translation: "Muhammad" },
+    { number: 2, name: "أحمد", translation: "Ahmad" },
+    { number: 3, name: "حميد", translation: "Hameed (The Praised)" },
+    { number: 4, name: "محمود", translation: "Mahmood (The Praiseworthy)" },
+    { number: 5, name: "طٰهٰ", translation: "Taha" },
+    { number: 6, name: "يٰس", translation: "Yaseen" },
+    { number: 7, name: "مزمل", translation: "Muzzammil (The Wrapped One)" },
+    { number: 8, name: "مدثر", translation: "Muddathir (The Cloaked One)" },
+    { number: 9, name: "عبد الله", translation: "Abdullah (Servant of Allah)" },
+    { number: 10, name: "حامد", translation: "Hamed (The Praiser of Allah)" },
+    { number: 11, name: "نبي", translation: "Nabi (The Prophet)" },
+    { number: 12, name: "رسول", translation: "Rasool (The Messenger)" },
+    { number: 13, name: "شاهد", translation: "Shaheed (The Witness)" },
+    { number: 14, name: "بشير", translation: "Basheer (The Bearer of Good News)" },
+    { number: 15, name: "نذير", translation: "Nazeer (The Warner)" },
+    { number: 16, name: "سراج", translation: "Siraj (The Lamp)" },
+    { number: 17, name: "منير", translation: "Muneer (The Illuminating One)" },
+    { number: 18, name: "نور", translation: "Noor (The Light)" },
+    { number: 19, name: "رحمة للعالمين", translation: "Rahmatul Lil Aalameen (Mercy to the Worlds)" },
+    { number: 20, name: "عبد الكريم", translation: "Abdul Kareem (Servant of The Generous)" },
+    { number: 21, name: "عبد الحكيم", translation: "Abdul Hakeem (Servant of The Wise)" },
+    { number: 22, name: "صادق", translation: "Sadiq (The Truthful)" },
+    { number: 23, name: "امين", translation: "Ameen (The Trustworthy)" },
+    { number: 24, name: "مذكّر", translation: "Mudhakkir (The Reminder)" },
+    { number: 25, name: "معلّم", translation: "Mu’allim (The Teacher)" },
+    { number: 26, name: "مجتبى", translation: "Mujtaba (The Chosen One)" },
+    { number: 27, name: "حبيب الله", translation: "Habibullah (Beloved of Allah)" },
+    { number: 28, name: "صفوة الله", translation: "Safwatullah (The Chosen by Allah)" },
+    { number: 29, name: "خاتم النبيين", translation: "Khatamun Nabiyyin (The Seal of Prophets)" },
+    { number: 30, name: "عبد النور", translation: "Abdul Noor (Servant of the Light)" },
+    { number: 31, name: "عبد الهادي", translation: "Abdul Hadi (Servant of the Guide)" },
+    { number: 32, name: "المصطفى", translation: "Al-Mustafa (The Chosen One)" },
+    { number: 33, name: "المرتضى", translation: "Al-Murtadha (The One Who is Satisfied)" },
+    { number: 34, name: "الخليل", translation: "Al-Khaleel (The Close Friend of Allah)" },
+    { number: 35, name: "الامين", translation: "Al-Ameen (The Trustworthy)" },
+    { number: 36, name: "عبد السلام", translation: "Abdul Salaam (Servant of Peace)" },
+    { number: 37, name: "عبد البصير", translation: "Abdul Baseer (Servant of The All-Seeing)" },
+    { number: 38, name: "الناصح", translation: "An-Nasih (The Advisor)" },
+    { number: 39, name: "الصابر", translation: "As-Sabir (The Patient One)" },
+    { number: 40, name: "المجاهد", translation: "Al-Mujahid (The Struggler in Allah’s Path)" },
+    { number: 41, name: "التقي", translation: "At-Taqi (The Pious)" },
+    { number: 42, name: "الزاهد", translation: "Az-Zahid (The Ascetic)" },
+    { number: 43, name: "الولي", translation: "Al-Wali (The Protecting Friend)" },
+    { number: 44, name: "عبد البديع", translation: "Abdul Badee (Servant of The Incomparable Creator)" },
+    { number: 45, name: "عبد الغفار", translation: "Abdul Ghaffar (Servant of The Most Forgiving)" },
+    { number: 46, name: "عبد الحليم", translation: "Abdul Haleem (Servant of The Forbearing)" },
+    { number: 47, name: "عبد الرؤوف", translation: "Abdur Ra’oof (Servant of The Most Kind)" },
+    { number: 48, name: "الشهيد", translation: "Ash-Shaheed (The Witness)" },
+    { number: 49, name: "المرسل", translation: "Al-Mursil (The Messenger)" },
+    { number: 50, name: "النبي الأمي", translation: "An-Nabi Al-Ummi (The Unlettered Prophet)" },
+    { number: 51, name: "القاسم", translation: "Al-Qasim (The Distributor)" },
+    { number: 52, name: "الضحوك", translation: "Ad-Dahuk (The Smiling One)" },
+    { number: 53, name: "البكاء", translation: "Al-Bakkaa (The One Who Weeps for Allah)" },
+    { number: 54, name: "الشافع", translation: "Ash-Shafi' (The Intercessor)" },
+    { number: 55, name: "الهاد", translation: "Al-Hadi (The Guide)" },
+    { number: 56, name: "المنذر", translation: "Al-Mundhir (The Warner)" },
+    { number: 57, name: "عبد الحميد", translation: "Abdul Hameed (Servant of The Praiseworthy)" },
+    { number: 58, name: "عبد الوهاب", translation: "Abdul Wahhab (Servant of The Bestower)" },
+    { number: 59, name: "عبد القادر", translation: "Abdul Qadir (Servant of The Omnipotent)" },
+    { number: 60, name: "السيد", translation: "As-Sayyid (The Master)" },
+    { number: 61, name: "البرهان", translation: "Al-Burhan (The Proof)" },
+    { number: 62, name: "عبد الجليل", translation: "Abdul Jaleel (Servant of The Majestic)" },
+    { number: 63, name: "عبد الواسع", translation: "Abdul Wasi (Servant of The All-Encompassing)" },
+    { number: 64, name: "عبد الرشيد", translation: "Abdur Rasheed (Servant of The Guide)" },
+    { number: 65, name: "عبد الكريم", translation: "Abdul Kareem (Servant of The Most Generous)" },
+    { number: 66, name: "عبد العليم", translation: "Abdul Aleem (Servant of The All-Knowing)" },
+    
+    { number: 67, name: "عبد المجيب", translation: "Abdul Mujeeb (Servant of The Responsive One)" },
+    { number: 68, name: "عبد الحق", translation: "Abdul Haqq (Servant of The Truth)" },
+    { number: 69, name: "عبد الرقيب", translation: "Abdur Raqeeb (Servant of The Watchful)" },
+    { number: 70, name: "عبد المالك", translation: "Abdul Malik (Servant of The King)" },
+    { number: 71, name: "عبد اللطيف", translation: "Abdul Lateef (Servant of The Most Subtle)" },
+    { number: 72, name: "عبد الودود", translation: "Abdul Wadood (Servant of The Most Loving)" },
+    { number: 73, name: "عبد الغني", translation: "Abdul Ghani (Servant of The Self-Sufficient)" },
+    { number: 74, name: "عبد الصبور", translation: "Abdus Saboor (Servant of The Most Patient)" },
+    { number: 75, name: "السراج", translation: "As-Siraaj (The Lamp)" },
+    { number: 76, name: "القمر المنير", translation: "Al-Qamar Al-Muneer (The Illuminating Moon)" },
+    { number: 77, name: "عبد الجبار", translation: "Abdul Jabbar (Servant of The Compeller)" },
+    { number: 78, name: "عبد المتين", translation: "Abdul Mateen (Servant of The Firm One)" },
+    { number: 79, name: "عبد الناصر", translation: "Abdun Nasir (Servant of The Helper)" },
+    { number: 80, name: "عبد المنان", translation: "Abdul Mannan (Servant of The Bestower)" },
+    { number: 81, name: "الروح", translation: "Ar-Ruh (The Spirit)" },
+    { number: 82, name: "السيد", translation: "As-Sayyid (The Master)" },
+    { number: 83, name: "الشافع", translation: "Ash-Shafi' (The Intercessor)" },
+    { number: 84, name: "القدوة", translation: "Al-Qudwah (The Role Model)" },
+    { number: 85, name: "المحبوب", translation: "Al-Mahboob (The Beloved)" },
+    { number: 86, name: "المختار", translation: "Al-Mukhtar (The Chosen One)" },
+    { number: 87, name: "المنقذ", translation: "Al-Munqidh (The Savior)" },
+    { number: 88, name: "عبد الولي", translation: "Abdul Wali (Servant of The Protecting Friend)" },
+    { number: 89, name: "النذير المبين", translation: "An-Nadheer Al-Mubeen (The Clear Warner)" },
+    { number: 90, name: "المحمدي", translation: "Al-Muhammadi (The One Related to Muhammad)" },
+    { number: 91, name: "المؤيد", translation: "Al-Mu’ayyad (The Supported One)" },
+    { number: 92, name: "الصادق الأمين", translation: "As-Sadiq Al-Ameen (The Truthful and Trustworthy)" },
+    { number: 93, name: "العزيز", translation: "Al-Aziz (The Noble and Mighty)" },
+    { number: 94, name: "الحريص عليكم", translation: "Al-Harees Alaikum (The One Concerned for You)" },
+    { number: 95, name: "المنصور", translation: "Al-Mansoor (The Victorious)" },
+    { number: 96, name: "الكريم", translation: "Al-Kareem (The Generous)" },
+    { number: 97, name: "عبد الباقي", translation: "Abdul Baqi (Servant of The Everlasting)" },
+    { number: 98, name: "عبد النور", translation: "Abdul Noor (Servant of The Light)" },
+    { number: 99, name: "عبد القهار", translation: "Abdul Qahhar (Servant of The All-Dominant)" }
+];
+    // Continue adding until 99 names...
+
+
+
+    let currentIndex = 0;
+
+function updateContent() {
+    const nameElement = document.getElementById('name');
+    const translationElement = document.getElementById('translation');
+
+    nameElement.classList.add('animate');
+    translationElement.classList.add('animate');
+
+    setTimeout(() => {
+        nameElement.innerHTML = `<strong>${nabiNames[currentIndex].number}.</strong> ${nabiNames[currentIndex].name}`;
+        translationElement.textContent = nabiNames[currentIndex].translation;
+
+        nameElement.classList.remove('animate');
+        translationElement.classList.remove('animate');
+    }, 300);
+}
+
+function nextName() {
+    currentIndex = (currentIndex + 1) % nabiNames.length;
+    updateContent();
+}
+
+function previousName() {
+    currentIndex = (currentIndex - 1 + nabiNames.length) % nabiNames.length;
+    updateContent();
+}
+
+// Initialize first name
+updateContent();
+</script>
+
+
+
+</body>
+</html>
