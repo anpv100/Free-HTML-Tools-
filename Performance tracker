@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Tracker</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+      color: white;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 2rem;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 800px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      color: #4ecdc4;
+      margin-bottom: 1.5rem;
+      font-size: 2.5rem;
+      text-align: center;
+    }
+
+    select, input, button {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      width: 100%;
+      font-size: 1.1rem;
+      border: 2px solid #4ecdc4;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    button {
+      background: linear-gradient(45deg, #4ecdc4, #45b7af);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+    }
+
+    .progress-bar {
+      background: #333;
+      border-radius: 10px;
+      height: 30px;
+      width: 100%;
+      margin: 1.5rem 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #4ecdc4, #45b7af);
+      transition: width 0.3s ease;
+    }
+
+    .stats {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .stat-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.8rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    #surrenderButton {
+      background: linear-gradient(45deg, #ff6b6b, #ff4444);
+      margin-top: 1.5rem;
+    }
+
+    #retryHome {
+      display: none;
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    #history {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .history-entry {
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .stroke-pulse {
+      animation: pulse 0.3s ease;
+    }
+
+    #summaryText {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .controls {
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏆 Performance Tracker</h1>
+    <div class="controls">
+      <select id="activitySelect">
+        <option value="masturbation">Masturbation</option>
+        <option value="intercourse">Intercourse</option>
+      </select>
+      <input type="number" id="ageInput" placeholder="Age (18-100)" min="18" max="100"
+             oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      <button id="startButton">🚀 Start Session</button>
+    </div>
+
+    <div id="progressContainer" style="display:none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="stats">
+        <div class="stat-item" id="timer">⏱️ 00:00</div>
+        <div class="stat-item" id="strokeCount">💪 Strokes: 0</div>
+        <div class="stat-item" id="rateDisplay">📈 Rate: 0.0/sec</div>
+        <div class="stat-item" id="statusText">📊 Stage: Poor</div>
+      </div>
+      <button id="surrenderButton">🏳️ Surrender</button>
+    </div>
+
+    <div id="retryHome">
+      <div id="summaryText"></div>
+      <button id="retryButton">🔄 Retry</button>
+      <button id="homeButton">🏠 Home</button>
+    </div>
+
+    <div id="history">
+      <h3>📅 Session History</h3>
+      <div id="historyEntries">No sessions yet</div>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const activitySelect = document.getElementById('activitySelect');
+    const ageInput = document.getElementById('ageInput');
+    const startButton = document.getElementById('startButton');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const strokeCountElement = document.getElementById('strokeCount');
+    const statusText = document.getElementById('statusText');
+    const rateDisplay = document.getElementById('rateDisplay');
+    const timerElement = document.getElementById('timer');
+    const summaryText = document.getElementById('summaryText');
+    const retryHome = document.getElementById('retryHome');
+    const retryButton = document.getElementById('retryButton');
+    const homeButton = document.getElementById('homeButton');
+    const surrenderButton = document.getElementById('surrenderButton');
+    const historyEntries = document.getElementById('historyEntries');
+
+    // App State
+    let activity = '';
+    let age = 0;
+    let total = 0;
+    let count = 0;
+    let startTime = 0;
+    let progressInterval = null;
+    let actionInterval = null;
+    let timerInterval = null;
+    let currentStage = 0;
+    const stages = ['Poor', 'Good', 'Very Good', 'Amazing', 'Excellent', 'Elite'];
+
+    // Event Listeners
+    startButton.addEventListener('click', startSession);
+    retryButton.addEventListener('click', startSession);
+    homeButton.addEventListener('click', () => location.reload());
+    surrenderButton.addEventListener('click', surrenderSession);
+
+    // Main Functions
+    function startSession() {
+      activity = activitySelect.value;
+      age = parseInt(ageInput.value);
+
+      if (isNaN(age) || age < 18 || age > 100) {
+        alert('Please enter a valid age between 18 and 100');
+        return;
+      }
+
+      total = calculateTarget(age, activity);
+      const ratePerMinute = calculateRate(age, activity);
+      const perSecondRate = ratePerMinute / 60;
+      count = 0;
+      currentStage = 0;
+      startTime = Date.now();
+
+      // UI Updates
+      startButton.disabled = true;
+      progressContainer.style.display = 'block';
+      retryHome.style.display = 'none';
+      progressFill.style.width = '0%';
+      updateStage();
+      updateStrokeCount();
+      updateTimer();
+
+      // Clear any existing intervals
+      clearAllIntervals();
+
+      // Set up new intervals
+      progressInterval = setInterval(updateProgressBar, 1000);
+      actionInterval = setInterval(() => {
+        count += perSecondRate;
+        count = Math.min(count, total);
+        updateStrokeCount();
+        if (count >= total) {
+          surrenderSession();
+        }
+      }, 1000);
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function calculateTarget(age, type) {
+      const targets = {
+        masturbation: [300, 250, 200, 150, 100],
+        intercourse: [120, 100, 80, 60, 40]
+      };
+      const ageRanges = [20, 30, 40, 50];
+      const index = ageRanges.findIndex(limit => age < limit);
+      return targets[type][index === -1 ? targets[type].length - 1 : index];
+    }
+
+    function calculateRate(age, type) {
+      const rates = {
+        masturbation: [120, 100, 80, 60, 40],
+        intercourse: [60, 50, 40, 30, 20]
+      };
+      const ageRanges = [20, 30, 40, 50];
+      const index = ageRanges.findIndex(limit => age < limit);
+      return rates[type][index === -1 ? rates[type].length - 1 : index];
+    }
+
+    function updateStrokeCount() {
+      strokeCountElement.textContent = `${activity === 'masturbation' ? '✊ Strokes' : '🏃 Pushes'}: ${Math.floor(count)}`;
+      strokeCountElement.classList.add('stroke-pulse');
+      setTimeout(() => strokeCountElement.classList.remove('stroke-pulse'), 300);
+    }
+
+    function updateProgressBar() {
+      const percentage = (count / total) * 100;
+      progressFill.style.width = `${percentage}%`;
+      
+      // Update stage based on percentage
+      const newStage = Math.min(Math.floor(percentage / 20), stages.length - 1);
+      if (newStage !== currentStage) {
+        currentStage = newStage;
+        updateStage();
+      }
+      
+      // Update rate display
+      const elapsed = (Date.now() - startTime) / 1000;
+      const currentRate = elapsed > 0 ? (count / elapsed).toFixed(1) : 0;
+      rateDisplay.textContent = `📈 Rate: ${currentRate}/sec`;
+    }
+
+    function updateStage() {
+      statusText.textContent = `📊 Stage: ${stages[currentStage]}`;
+    }
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const seconds = String(elapsed % 60).padStart(2, '0');
+      timerElement.textContent = `⏱️ ${minutes}:${seconds}`;
+    }
+
+    function surrenderSession() {
+      clearAllIntervals();
+      
+      const elapsed = (Date.now() - startTime) / 1000;
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = Math.floor(elapsed % 60);
+      const avgRate = (count / elapsed).toFixed(1);
+      
+      summaryText.innerHTML = `
+        <strong>Session Summary:</strong><br>
+        🎯 Target: ${total}<br>
+        ✅ Achieved: ${Math.floor(count)}<br>
+        📈 Average Rate: ${avgRate}/sec (${(avgRate * 60).toFixed(1)}/min)<br>
+        ⏱️ Duration: ${minutes}m ${seconds}s<br>
+        🏆 Final Stage: ${stages[currentStage]}
+      `;
+      
+      saveToHistory();
+      retryHome.style.display = 'block';
+      startButton.disabled = false;
+    }
+
+    function clearAllIntervals() {
+      if (progressInterval) clearInterval(progressInterval);
+      if (actionInterval) clearInterval(actionInterval);
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function saveToHistory() {
+      const sessionData = {
+        date: new Date().toLocaleString(),
+        activity,
+        age,
+        count: Math.floor(count),
+        duration: Math.floor((Date.now() - startTime) / 1000),
+        stage: stages[currentStage]
+      };
+
+      let history = JSON.parse(localStorage.getItem('performanceHistory') || '[]');
+      history = [sessionData, ...history].slice(0, 5);
+      localStorage.setItem('performanceHistory', JSON.stringify(history));
+      updateHistoryDisplay();
+    }
+
+    function updateHistoryDisplay() {
+      const history = JSON.parse(localStorage.getItem('performanceHistory') || []);
+      
+      if (history.length === 0) {
+        historyEntries.innerHTML = 'No sessions yet';
+        return;
+      }
+      
+      const entries = history.map(entry => `
+        <div class="history-entry">
+          <strong>${entry.date}</strong><br>
+          ${entry.activity === 'masturbation' ? '✊ Masturbation' : '🏃 Intercourse'} | 
+          Age: ${entry.age}<br>
+          Count: ${entry.count} | 
+          Duration: ${Math.floor(entry.duration / 60)}m ${entry.duration % 60}s<br>
+          Stage: ${entry.stage}
+        </div>
+      `).join('');
+      
+      historyEntries.innerHTML = entries;
+    }
+
+    // Initialize history display
+    updateHistoryDisplay();
+  </script>
+</body>
+</html>
