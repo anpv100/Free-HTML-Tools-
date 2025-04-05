@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edging Performance Trainer</title>
+  <style>
+    :root {
+      --primary: #ff6b6b;
+      --secondary: #4ecdc4;
+      --dark: #2d3436;
+      --light: #f9f9f9;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+      color: white;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 1rem;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+    }
+    h1 {
+      color: var(--primary);
+      text-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+      margin-bottom: 2rem;
+    }
+    .btn {
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      border: none;
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      border-radius: 2rem;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(78, 205, 196, 0.5);
+    }
+    #gameInterface, #restartSection {
+      display: none;
+      margin-top: 2rem;
+    }
+    .anatomical-progress {
+      width: 80px;
+      height: 300px;
+      margin: 2rem auto;
+      position: relative;
+      background: #333;
+      border-radius: 40px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 0%;
+      background: linear-gradient(to top, #ff6b6b, #ff4444);
+      transition: height 0.3s ease;
+    }
+    .stroke-indicator {
+      position: absolute;
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      animation: strokeMove 1s linear infinite;
+    }
+    @keyframes strokeMove {
+      0% { bottom: 0; opacity: 1; }
+      50% { bottom: 100%; opacity: 0.5; }
+      100% { bottom: 0; opacity: 1; }
+    }
+    .stroke-count {
+      font-size: 0.9em;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+    .analytics {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    .performance-meter {
+      width: 100%;
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+      transition: width 0.5s ease;
+    }
+    .age-input {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 20px;
+      border: 2px solid #4ecdc4;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      text-align: center;
+      width: 100px;
+    }
+    .rating {
+      font-size: 1.5em;
+      margin: 10px 0;
+      padding: 5px 10px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .excellent { background: #4ecdc4; color: #2d3436; }
+    .good { background: #6c5ce7; }
+    .average { background: #fdcb6e; color: #2d3436; }
+    .poor { background: #ff4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Edging Performance Trainer</h1>
+    <!-- Setup Section -->
+    <div id="setup">
+      <div>
+        <input type="number" id="ageInput" class="age-input" placeholder="Your Age" min="18" max="100" />
+      </div>
+      <button class="btn" onclick="startSession()">Start Training</button>
+    </div>
+
+    <!-- Training Interface -->
+    <div id="gameInterface">
+      <div id="timer">00:00</div>
+      <div class="anatomical-progress">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="stroke-indicator" id="strokeIndicator"></div>
+      </div>
+      <div id="currentChallenge"></div>
+      <button class="btn" onclick="handleSurrender()" style="background: #ff4444;">⏹️ Surrender</button>
+      <button class="btn" onclick="skipChallenge()" style="background: #6c5ce7;">⏭️ Skip</button>
+      <div class="analytics" id="analytics">
+        <div id="rating" class="rating"></div>
+        <div>Stamina: <span id="staminaScore">0</span>/100</div>
+        <div class="performance-meter">
+          <div class="meter-fill" id="staminaMeter"></div>
+        </div>
+        <div>Stroke Efficiency: <span id="strengthScore">0</span>/100</div>
+        <div class="performance-meter">
+          <div class="meter-fill" id="strengthMeter"></div>
+        </div>
+        <div id="ageAssessment"></div>
+      </div>
+    </div>
+
+    <!-- Restart Section -->
+    <div id="restartSection">
+      <button class="btn" onclick="resetSession()">Restart Training</button>
+    </div>
+  </div>
+
+  <script>
+    // Base challenge settings with stroke counts and speeds
+    const baseChallenges = [
+      { text: "Super Slow Controlled Strokes", strokes: 20, speed: 3000 },
+      { text: "Slow Controlled Strokes", strokes: 25, speed: 2000 },
+      { text: "Medium Pace Strokes", strokes: 25, speed: 1000 },
+      { text: "Fast Rhythmic Strokes", strokes: 20, speed: 500 },
+      { text: "Super Fast Rhythmic Strokes", strokes: 15, speed: 250 }
+    ];
+
+    // Recovery phase fixed at 15 seconds duration
+    const recoveryChallenge = { text: "Recovery Phase", duration: 15, speed: 0 };
+
+    let challenges = [];
+    let currentChallenge = null;
+    let currentChallengeIndex = 0;
+    let totalSeconds = 0;
+    let timerInterval = null;
+    let challengeTimeout = null;
+    let userAge = 30;
+    let strokeCount = 0;
+    let strokeListener = null;
+    let strokesDone = 0;
+
+    // Utility function to shuffle an array (Fisher-Yates)
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+    // Start session: validate age and initiate training
+    function startSession() {
+      userAge = parseInt(document.getElementById('ageInput').value, 10);
+      if (isNaN(userAge) || userAge < 18) {
+        alert("Please enter a valid age (18 or older).");
+        return;
+      }
+
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('gameInterface').style.display = 'block';
+      document.getElementById('restartSection').style.display = 'none';
+      document.getElementById('analytics').style.display = 'none';
+
+      currentChallengeIndex = 0;
+      totalSeconds = 0;
+      strokeCount = 0;
+      strokesDone = 0;
+
+      clearInterval(timerInterval);
+      clearTimeout(challengeTimeout);
+
+      challenges = shuffle([...baseChallenges]);
+      startChallenge();
+      startTimer();
+    }
+
+    // Start a challenge based on current index; if index exceeds base challenges, use recovery phase.
+    function startChallenge() {
+      if (currentChallengeIndex >= challenges.length) {
+        currentChallenge = recoveryChallenge;
+      } else {
+        currentChallenge = challenges[currentChallengeIndex];
+      }
+
+      const indicator = document.getElementById('strokeIndicator');
+      const progress = document.getElementById('progressFill');
+
+      // Reset progress bar animation
+      progress.style.transition = 'none';
+      progress.style.height = '0%';
+      void progress.offsetHeight;
+
+      strokesDone = 0;
+      document.getElementById('currentChallenge').innerHTML = `
+        ${currentChallenge.text}
+        <div class="stroke-count">Strokes: <span id="strokeCounter">0</span>${currentChallenge.strokes ? '/' + currentChallenge.strokes : ''}</div>
+      `;
+
+      // Determine duration: use defined duration for recovery or calculate based on strokes and speed
+      const durationSeconds = currentChallenge.duration || (currentChallenge.strokes * currentChallenge.speed) / 1000;
+
+      // Animate progress fill over the challenge duration
+      progress.style.transition = `height ${durationSeconds}s linear`;
+      progress.style.height = '100%';
+
+      // Reset and setup stroke indicator animation
+      indicator.style.animation = 'none';
+      void indicator.offsetHeight;
+
+      if (currentChallenge.speed > 0) {
+        indicator.style.animation = `strokeMove ${currentChallenge.speed}ms linear infinite`;
+        strokeListener = () => {
+          strokesDone++;
+          strokeCount++;
+          document.getElementById('strokeCounter').textContent = `${strokesDone}${currentChallenge.strokes ? '/' + currentChallenge.strokes : ''}`;
+          if (strokesDone >= currentChallenge.strokes) {
+            skipChallenge();
+          }
+        };
+        indicator.addEventListener('animationiteration', strokeListener);
+      } else {
+        if (strokeListener) {
+          indicator.removeEventListener('animationiteration', strokeListener);
+          strokeListener = null;
+        }
+      }
+
+      // Schedule challenge completion after its duration
+      challengeTimeout = setTimeout(() => {
+        skipChallenge();
+      }, durationSeconds * 1000);
+    }
+
+    // Skip current challenge and move to the next one
+    function skipChallenge() {
+      clearTimeout(challengeTimeout);
+      const indicator = document.getElementById('strokeIndicator');
+      if (strokeListener) {
+        indicator.removeEventListener('animationiteration', strokeListener);
+        strokeListener = null;
+      }
+
+      if (currentChallengeIndex >= challenges.length) {
+        // If recovery phase is finished, restart with a new randomized set of challenges
+        challenges = shuffle([...baseChallenges]);
+        currentChallengeIndex = 0;
+      } else {
+        currentChallengeIndex++;
+      }
+      startChallenge();
+    }
+
+    // Start the overall timer for the session
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        totalSeconds++;
+        document.getElementById('timer').textContent =
+          `${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Handle surrender: stop the session and display performance analytics
+    function handleSurrender() {
+      clearInterval(timerInterval);
+      clearTimeout(challengeTimeout);
+      if (strokeListener) {
+        document.getElementById('strokeIndicator').removeEventListener('animationiteration', strokeListener);
+        strokeListener = null;
+      }
+
+      // Stop progress animation
+      const progress = document.getElementById('progressFill');
+      progress.style.transition = 'none';
+      progress.style.height = '0%';
+
+      // Calculate and display performance analytics
+      const performance = calculatePerformance();
+      const ratingElem = document.getElementById('rating');
+      ratingElem.className = `rating ${performance.ratingClass}`;
+      ratingElem.textContent = performance.rating;
+
+      document.getElementById('staminaScore').textContent = Math.round(performance.staminaScore);
+      document.getElementById('strengthScore').textContent = Math.round(performance.strengthScore);
+      document.getElementById('ageAssessment').innerHTML = performance.ageComparison;
+
+      document.getElementById('analytics').style.display = 'block';
+
+      // Animate performance meters
+      setTimeout(() => {
+        document.getElementById('staminaMeter').style.width = performance.staminaScore + '%';
+        document.getElementById('strengthMeter').style.width = performance.strengthScore + '%';
+      }, 100);
+
+      // Show restart option
+      document.getElementById('restartSection').style.display = 'block';
+    }
+
+    // Calculate performance based on total time and stroke count
+    function calculatePerformance() {
+      // Stamina based on total session duration (capped at 100)
+      const staminaScore = Math.min(100, (totalSeconds / 60) * 10);
+      // Strength based on total stroke count (capped at 100)
+      const strengthScore = Math.min(100, strokeCount * 2);
+      
+      const averageScore = (staminaScore + strengthScore) / 2;
+      let rating = "";
+      let ratingClass = "";
+      
+      if (averageScore >= 80) {
+        rating = "Excellent";
+        ratingClass = "excellent";
+      } else if (averageScore >= 60) {
+        rating = "Good";
+        ratingClass = "good";
+      } else if (averageScore >= 40) {
+        rating = "Average";
+        ratingClass = "average";
+      } else {
+        rating = "Poor";
+        ratingClass = "poor";
+      }
+      
+      let ageComparison = "";
+      if (userAge >= 25 && userAge <= 35) {
+        ageComparison = "Your age is in the optimal range for peak performance.";
+      } else if (userAge < 25) {
+        ageComparison = "You are young—experience and control will improve with training.";
+      } else {
+        ageComparison = "With experience comes control—keep training to maintain performance.";
+      }
+      
+      return {
+        staminaScore,
+        strengthScore,
+        rating,
+        ratingClass,
+        ageComparison
+      };
+    }
+
+    // Reset the session to its initial state
+    function resetSession() {
+      clearInterval(timerInterval);
+      clearTimeout(challengeTimeout);
+      if (strokeListener) {
+        document.getElementById('strokeIndicator').removeEventListener('animationiteration', strokeListener);
+        strokeListener = null;
+      }
+      document.getElementById('setup').style.display = 'block';
+      document.getElementById('gameInterface').style.display = 'none';
+      document.getElementById('restartSection').style.display = 'none';
+      document.getElementById('analytics').style.display = 'none';
+      document.getElementById('progressFill').style.height = '0%';
+      document.getElementById('timer').textContent = '00:00';
+      document.getElementById('currentChallenge').innerHTML = "";
+      document.getElementById('staminaMeter').style.width = '0%';
+      document.getElementById('strengthMeter').style.width = '0%';
+    }
+  </script>
+</body>
+</html>
