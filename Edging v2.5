@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Edging Trainer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #00ffff;
+      --secondary: #ff00ff;
+      --dark: #0a0a1a;
+      --darker: #050510;
+      --glass: rgba(20, 20, 40, 0.6);
+      --glass-border: rgba(100, 200, 255, 0.2);
+      --glass-hover: rgba(30, 30, 60, 0.8);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--darker), var(--dark));
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* Animated Background */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary), transparent);
+      opacity: 0.3;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% { transform: translateY(0) translateX(0); }
+      25% { transform: translateY(-20vh) translateX(10vw); }
+      50% { transform: translateY(10vh) translateX(-15vw); }
+      75% { transform: translateY(-15vh) translateX(20vw); }
+      100% { transform: translateY(0) translateX(0); }
+    }
+    
+    /* Main Container */
+    .app-container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 900px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Panel Styling */
+    .panel {
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                  0 0 20px rgba(0, 255, 255, 0.1) inset;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .panel:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4),
+                  0 0 25px rgba(0, 255, 255, 0.15) inset;
+    }
+    
+    /* Header */
+    .header {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      color: #aaa;
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    /* Video Panel */
+    .video-panel {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    video {
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16/9;
+      border-radius: 15px;
+      background: #000;
+      border: 2px solid var(--glass-border);
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.2);
+    }
+    
+    /* Input Panel */
+    .input-panel {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+    
+    .input-group input, 
+    .input-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: rgba(10, 15, 30, 0.5);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    
+    .input-group input:focus, 
+    .input-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+    }
+    
+    /* Timer Panel */
+    .timer-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .timer-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 20px 0;
+    }
+    
+    .circular-progress {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(var(--primary) 0%, var(--dark) 0%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+    }
+    
+    .circular-progress::before {
+      content: "";
+      position: absolute;
+      width: 85%;
+      height: 85%;
+      border-radius: 50%;
+      background: var(--darker);
+    }
+    
+    .timer-display {
+      position: absolute;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: white;
+      z-index: 10;
+    }
+    
+    .phase-indicator {
+      position: absolute;
+      bottom: -30px;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    /* Stats Panel */
+    .stats-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .stat-card {
+      background: rgba(10, 15, 30, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid var(--glass-border);
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 10px 0;
+      color: var(--primary);
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    
+    /* Controls */
+    .control-panel {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      padding: 20px;
+    }
+    
+    .control-btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), #0077aa);
+      color: #000;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 5px 15px rgba(0, 150, 255, 0.3);
+    }
+    
+    .control-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 200, 255, 0.5);
+    }
+    
+    .control-btn.secondary {
+      background: linear-gradient(135deg, var(--secondary), #aa0077);
+    }
+    
+    .control-btn:active {
+      transform: translateY(1px);
+    }
+    
+    /* Results Panel */
+    .results-panel {
+      grid-column: 1 / -1;
+    }
+    
+    .chart-container {
+      height: 300px;
+      margin-top: 20px;
+    }
+    
+/* Modal Overlay */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* Modal Content Box */
+.modal-content {
+  background: #1e1e1e;
+  color: #fff;
+  padding: 24px;
+  border-radius: 16px; /* rounded corners */
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh; /* important for scroll */
+  overflow-y: auto; /* scroll inside the modal */
+  box-shadow: 0 0 24px rgba(0, 200, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #555 #222;
+}
+
+/* Custom scrollbar for WebKit */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-content::-webkit-scrollbar-track {
+  background: #222;
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 8px;
+}
+    
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    
+    .close-btn:hover {
+      color: var(--primary);
+    }
+    
+    /* Footer */
+    .footer {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-size: 0.9rem;
+      border-top: 1px solid var(--glass-border);
+      margin-top: 20px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .control-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+      }
+      
+      .stats-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .app-container {
+        padding: 10px;
+      }
+      
+      .panel {
+        padding: 15px;
+      }
+      
+      .timer-container {
+        width: 180px;
+        height: 180px;
+      }
+      
+      .timer-display {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="particles" id="particles"></div>
+  
+  <div class="app-container">
+    <div class="header panel">
+      <h1><i class="fas fa-fire"></i> ADVANCED EDGING TRAINER</h1>
+      <p>Enhance your stamina and control with this scientifically designed training program</p>
+    </div>
+    
+    
+    
+    <div class="input-panel panel">
+      <h2><i class="fas fa-cog"></i> SESSION SETTINGS</h2>
+      <div class="input-group">
+        <label for="videoFile"><i class="fas fa-video"></i> SELECT VIDEO (16:9)</label>
+        <input type="file" id="videoFile" accept="video/*" />
+      </div>
+      
+      <div class="input-group">
+        <label for="age"><i class="fas fa-user"></i> YOUR AGE</label>
+        <input type="number" id="age" placeholder="Enter your age" min="18" max="100" />
+      </div>
+      
+      <div class="input-group">
+        <label for="stimulation"><i class="fas fa-bolt"></i> STIMULATION DURATION (SEC)</label>
+        <input type="number" id="stimulation" value="60" />
+      </div>
+      
+      <div class="input-group">
+        <label for="rest"><i class="fas fa-bed"></i> REST DURATION (SEC)</label>
+        <input type="number" id="rest" value="30" />
+      </div>
+      
+      <div class="input-group">
+        <label for="rounds"><i class="fas fa-sync-alt"></i> NUMBER OF ROUNDS</label>
+        <input type="number" id="rounds" value="5" />
+      </div>
+      
+      <div class="input-group">
+        <label for="strokesPerSecond"><i class="fas fa-tachometer-alt"></i> STROKES PER SECOND (SPS)</label>
+        <input type="number" id="strokesPerSecond" value="3" />
+      </div>
+    </div>
+    
+     <div class="control-panel panel">
+      <button class="control-btn" onclick="startSession()">
+        <i class="fas fa-play"></i> START
+      </button>
+      <button class="control-btn secondary" onclick="surrender()">
+        <i class="fas fa-flag"></i> SURRENDER
+      </button>
+      <button class="control-btn" onclick="skipPhase()">
+        <i class="fas fa-step-forward"></i> SKIP PHASE
+      </button>
+      <button class="control-btn" onclick="restartSession()">
+        <i class="fas fa-redo"></i> RESTART
+      </button>
+      <button class="control-btn" onclick="showInfo()">
+        <i class="fas fa-info-circle"></i> INFO
+      </button>
+    </div>
+    
+    <div class="timer-panel panel">
+      <h2><i class="fas fa-clock"></i> SESSION TIMER</h2>
+      <div class="timer-container">
+        <div class="circular-progress" id="circularProgress">
+          <div class="timer-display" id="timer">00:00</div>
+        </div>
+        <div class="phase-indicator" id="phaseIndicator">READY</div>
+      </div>
+      <div class="status" id="status">Session Not Started</div>
+    </div>
+    
+<div class="video-panel panel">
+      <video id="videoPlayer" controls></video>
+    </div>
+    
+    <div class="stats-panel panel">
+      <h2><i class="fas fa-chart-line"></i> PERFORMANCE STATS</h2>
+      <div class="stat-card">
+        <div class="stat-label">CURRENT ROUND</div>
+        <div class="stat-value" id="currentRound">0/0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">STROKES COMPLETED</div>
+        <div class="stat-value" id="strokeCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">RECOMMENDED SPS</div>
+        <div class="stat-value" id="recommendedSps">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TIME REMAINING</div>
+        <div class="stat-value" id="totalTime">00:00</div>
+      </div>
+    </div>
+    
+   
+    
+    <div class="results-panel panel">
+      <h2><i class="fas fa-chart-bar"></i> PERFORMANCE ANALYSIS</h2>
+      <div class="result" id="finalResult"></div>
+      <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+      </div>
+    </div>
+    
+    <div class="footer panel">
+      Advanced Edging Trainer v2.0 | Designed for Stamina Development | Use Responsibly
+    </div>
+  </div>
+  
+  <!-- Modal for Info -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeInfo()">&times;</button>
+      <h3><i class="fas fa-chart-line"></i> Recommended Strokes per Second (SPS) Based on Age</h3>
+      <div id="infoContent">
+        <p><strong>Age-based Strokes per Second Recommendations:</strong></p>
+        <ul>
+          <li><strong>18-24 years:</strong> Max 4 SPS</li>
+          <li><strong>25-34 years:</strong> Max 3 SPS</li>
+          <li><strong>35-49 years:</strong> Max 2 SPS</li>
+          <li><strong>50+ years:</strong> Max 1 SPS</li>
+        </ul>
+        <p>Adjust your strokes per second accordingly.</p>
+        
+        <p><strong>Realistic Edging Performance Chart (Based on SPS and Age):</strong></p>
+        <ul>
+          <li><strong>Age: 18-24</strong>
+            <ul>
+              <li>150 seconds / 75 seconds rest / 6 rounds</li>
+              <li>100 seconds / 60 seconds rest / 5 rounds</li>
+              <li>80 seconds / 60 seconds rest / 4 rounds</li>
+            </ul>
+          </li>
+          <li><strong>Age: 25-34</strong>
+            <ul>
+              <li>140 seconds / 70 seconds rest / 6 rounds</li>
+              <li>90 seconds / 60 seconds rest / 5 rounds</li>
+              <li>70 seconds / 50 seconds rest / 4 rounds</li>
+            </ul>
+          </li>
+          <li><strong>Age: 35-49</strong>
+            <ul>
+              <li>120 seconds / 60 seconds rest / 5 rounds</li>
+              <li>80 seconds / 50 seconds rest / 4 rounds</li>
+              <li>60 seconds / 40 seconds rest / 3 rounds</li>
+            </ul>
+          </li>
+          <li><strong>Age: 50+</strong>
+            <ul>
+              <li>100 seconds / 50 seconds rest / 4 rounds</li>
+              <li>70 seconds / 40 seconds rest / 3 rounds</li>
+              <li>50 seconds / 30 seconds rest / 2 rounds</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Create animated background particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 30;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Random size and position
+        const size = Math.random() * 100 + 20;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}vw`;
+        particle.style.top = `${Math.random() * 100}vh`;
+        
+        // Random animation delay
+        particle.style.animationDelay = `${Math.random() * 15}s`;
+        
+        particlesContainer.appendChild(particle);
+      }
+    }
+    
+    // Initialize the performance chart
+    function initChart() {
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      window.performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5'],
+          datasets: [{
+            label: 'Strokes per Round',
+            data: [0, 0, 0, 0, 0],
+            borderColor: '#00ffff',
+            backgroundColor: 'rgba(0, 255, 255, 0.1)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: '#aaa'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: '#aaa'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // DOM elements
+    const video = document.getElementById('videoPlayer');
+    const fileInput = document.getElementById('videoFile');
+    const timerDisplay = document.getElementById('timer');
+    const phaseIndicator = document.getElementById('phaseIndicator');
+    const statusDisplay = document.getElementById('status');
+    const strokeCountDisplay = document.getElementById('strokeCount');
+    const currentRoundDisplay = document.getElementById('currentRound');
+    const recommendedSpsDisplay = document.getElementById('recommendedSps');
+    const totalTimeDisplay = document.getElementById('totalTime');
+    const finalResultDisplay = document.getElementById('finalResult');
+    const circularProgress = document.getElementById('circularProgress');
+    
+    // Session variables
+    let age, stimulationDuration, restDuration, rounds, strokesPerSecond;
+    let currentRound = 1;
+    let isStimulation = true;
+    let currentTimer = 0;
+    let interval;
+    let strokesCompleted = 0;
+    let roundStrokes = [];
+    
+    // Initialize particles and chart
+    createParticles();
+    initChart();
+    
+    // File input handler
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        video.src = URL.createObjectURL(file);
+        video.load();
+      }
+    });
+    
+    // Start session
+    function startSession() {
+      age = parseInt(document.getElementById('age').value);
+      stimulationDuration = parseInt(document.getElementById('stimulation').value);
+      restDuration = parseInt(document.getElementById('rest').value);
+      rounds = parseInt(document.getElementById('rounds').value);
+      strokesPerSecond = parseInt(document.getElementById('strokesPerSecond').value);
+      
+      if (!age || age < 18 || age > 100) return alert("Enter valid age between 18-100");
+      
+      // Reset session data
+      strokesCompleted = 0;
+      currentRound = 1;
+      isStimulation = true;
+      roundStrokes = [];
+      
+      // Update UI
+      updateRecommendation();
+      updateRoundDisplay();
+      strokeCountDisplay.textContent = strokesCompleted;
+      updateTotalTime();
+      
+      // Start first phase
+      startPhase(stimulationDuration);
+    }
+    
+    // Update recommendation based on age
+    function updateRecommendation() {
+      const maxSPS = age < 25 ? 4 : age < 35 ? 3 : age < 50 ? 2 : 1;
+      recommendedSpsDisplay.textContent = maxSPS;
+    }
+    
+    // Start a phase (stimulation or rest)
+    function startPhase(duration) {
+      currentTimer = duration;
+      clearInterval(interval);
+      
+      // Play or pause video based on phase
+      if (isStimulation) {
+        video.play().catch(e => console.log("Video play error:", e));
+        phaseIndicator.textContent = "STIMULATION";
+        phaseIndicator.style.background = "linear-gradient(90deg, #ff00ff, #00ffff)";
+        phaseIndicator.style.webkitBackgroundClip = "text";
+      } else {
+        video.pause();
+        phaseIndicator.textContent = "REST";
+        phaseIndicator.style.background = "linear-gradient(90deg, #00ffff, #0077ff)";
+        phaseIndicator.style.webkitBackgroundClip = "text";
+      }
+      
+      // Update UI
+      updateTimerDisplay();
+      updateStatus();
+      
+      // Start the timer
+      interval = setInterval(() => {
+        currentTimer--;
+        
+        // Update strokes during stimulation phase
+        if (isStimulation) {
+          strokesCompleted += strokesPerSecond;
+          strokeCountDisplay.textContent = strokesCompleted;
+        }
+        
+        // Update UI
+        updateTimerDisplay();
+        
+        // End of phase
+        if (currentTimer <= 0) {
+          clearInterval(interval);
+          
+          // Record strokes for this round
+          if (isStimulation) {
+            roundStrokes.push(strokesCompleted - (roundStrokes.reduce((a, b) => a + b, 0)));
+            updateChart();
+          }
+          
+          // Move to next phase
+          if (isStimulation) {
+            isStimulation = false;
+            startPhase(restDuration);
+          } else {
+            currentRound++;
+            if (currentRound > rounds) {
+              endSession();
+            } else {
+              isStimulation = true;
+              startPhase(stimulationDuration);
+            }
+          }
+          
+          // Update round display
+          updateRoundDisplay();
+        }
+      }, 1000);
+    }
+    
+    // Update timer display
+    function updateTimerDisplay() {
+      const mins = String(Math.floor(currentTimer / 60)).padStart(2, '0');
+      const secs = String(currentTimer % 60).padStart(2, '0');
+      timerDisplay.textContent = `${mins}:${secs}`;
+      
+      // Update circular progress
+      const totalDuration = isStimulation ? stimulationDuration : restDuration;
+      const progressPercentage = ((totalDuration - currentTimer) / totalDuration) * 100;
+      circularProgress.style.background = `conic-gradient(var(--primary) ${progressPercentage}%, var(--dark) 0%)`;
+    }
+    
+    // Update status display
+    function updateStatus() {
+      statusDisplay.textContent = `${isStimulation ? 'Stimulation' : 'Rest'} - Round ${currentRound}/${rounds}`;
+    }
+    
+    // Update round display
+    function updateRoundDisplay() {
+      currentRoundDisplay.textContent = `${currentRound}/${rounds}`;
+    }
+    
+    // Update total time display
+    function updateTotalTime() {
+      const totalSeconds = (stimulationDuration + restDuration) * rounds;
+      const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const secs = String(totalSeconds % 60).padStart(2, '0');
+      totalTimeDisplay.textContent = `${mins}:${secs}`;
+    }
+    
+    // Update the chart with current data
+    function updateChart() {
+      if (!window.performanceChart) return;
+      
+      // Extend labels if needed
+      if (roundStrokes.length > window.performanceChart.data.labels.length) {
+        for (let i = window.performanceChart.data.labels.length; i < roundStrokes.length; i++) {
+          window.performanceChart.data.labels.push(`Round ${i+1}`);
+        }
+      }
+      
+      // Update data
+      window.performanceChart.data.datasets[0].data = roundStrokes;
+      window.performanceChart.update();
+    }
+    
+    // End session (completed all rounds)
+    function endSession() {
+      document.getElementById('status').textContent = 'Session Completed!';
+      video.pause();
+      
+      const maxSPS = age < 25 ? 4 : age < 35 ? 3 : age < 50 ? 2 : 1;
+      
+      finalResultDisplay.innerHTML = `
+        <h3>Session Complete!</h3>
+        <p>Total Strokes: <strong>${strokesCompleted}</strong></p>
+        <p>Strokes per Second: <strong>${strokesPerSecond}</strong> | Recommended: <strong>${maxSPS}</strong></p>
+        <p>Age: <strong>${age}</strong> | Rounds Completed: <strong>${rounds}</strong></p>
+        <p>Performance: <strong>Excellent!</strong></p>
+      `;
+    }
+    
+    // Surrender function
+    function surrender() {
+      clearInterval(interval);
+      video.pause();
+      
+      const maxSPS = age < 25 ? 4 : age < 35 ? 3 : age < 50 ? 2 : 1;
+      
+      finalResultDisplay.innerHTML = `
+        <h3>Session Surrendered</h3>
+        <p>Surrendered on Round: <strong>${currentRound}/${rounds}</strong></p>
+        <p>Total Strokes: <strong>${strokesCompleted}</strong></p>
+        <p>Strokes per Second: <strong>${strokesPerSecond}</strong> | Recommended: <strong>${maxSPS}</strong></p>
+        <p>Age: <strong>${age}</strong></p>
+      `;
+    }
+    
+    // Skip current phase
+    function skipPhase() {
+      clearInterval(interval);
+      if (isStimulation) {
+        // Record strokes for this round
+        roundStrokes.push(strokesCompleted - (roundStrokes.reduce((a, b) => a + b, 0)));
+        updateChart();
+        
+        // Skip stimulation, go to rest
+        isStimulation = false;
+        startPhase(restDuration);
+      } else {
+        // Skip rest, start next round
+        isStimulation = true;
+        currentRound++;
+        if (currentRound > rounds) {
+          endSession();
+        } else {
+          startPhase(stimulationDuration);
+        }
+      }
+      updateRoundDisplay();
+    }
+    
+    // Restart session
+    function restartSession() {
+      clearInterval(interval);
+      video.pause();
+      location.reload();
+    }
+    
+    // Show info modal
+    function showInfo() {
+      document.getElementById('infoModal').style.display = 'flex';
+    }
+    
+    // Close info modal
+    function closeInfo() {
+      document.getElementById('infoModal').style.display = 'none';
+    }
+    
+    // Initial UI setup
+    updateRecommendation();
+    updateRoundDisplay();
+    updateTotalTime();
+  </script>
+</body>
+</html>
