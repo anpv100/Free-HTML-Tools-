@@ -459,7 +459,24 @@
       </div>
     </div>
     
-     <div class="control-panel panel">
+     
+    
+    <div class="timer-panel panel">
+      <h2><i class="fas fa-clock"></i> SESSION TIMER</h2>
+      <div class="timer-container">
+        <div class="circular-progress" id="circularProgress">
+          <div class="timer-display" id="timer">00:00</div>
+        </div>
+        <div class="phase-indicator" id="phaseIndicator">READY</div>
+      </div><br>
+      <div class="status" id="status">Session Not Started</div>
+    </div>
+    
+<div class="video-panel panel">
+      <video id="videoPlayer" controls></video>
+    </div>
+    
+    <div class="control-panel panel">
       <button class="control-btn" onclick="startSession()">
         <i class="fas fa-play"></i> START
       </button>
@@ -475,21 +492,6 @@
       <button class="control-btn" onclick="showInfo()">
         <i class="fas fa-info-circle"></i> INFO
       </button>
-    </div>
-    
-    <div class="timer-panel panel">
-      <h2><i class="fas fa-clock"></i> SESSION TIMER</h2>
-      <div class="timer-container">
-        <div class="circular-progress" id="circularProgress">
-          <div class="timer-display" id="timer">00:00</div>
-        </div>
-        <div class="phase-indicator" id="phaseIndicator">READY</div>
-      </div>
-      <div class="status" id="status">Session Not Started</div>
-    </div>
-    
-<div class="video-panel panel">
-      <video id="videoPlayer" controls></video>
     </div>
     
     <div class="stats-panel panel">
